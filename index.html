@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Verdict</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --text-color: #e0e0e0;
+            --accent-color: #3b82f6;
+            --secondary-text: #444;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-weight: 300;
+            letter-spacing: -1px;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+
+        .percentage-container {
+            width: 100%;
+            background: #1a1a1a;
+            border-radius: 20px;
+            height: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: var(--accent-color);
+            border-radius: 20px;
+            transition: width 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .percentage-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--accent-color);
+            margin-bottom: 3rem;
+        }
+
+        .footer-link {
+            position: absolute;
+            bottom: 30px;
+            font-size: 0.75rem;
+            text-decoration: none;
+            color: var(--secondary-text);
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Is Marlow DangerMario?</h1>
+        
+        <div class="percentage-container">
+            <div class="progress-bar" id="bar"></div>
+        </div>
+        
+        <div class="percentage-text">80% Probability</div>
+    </div>
+
+    <a href="https://www.google.com" class="footer-link">marlow official response</a>
+
+    <script>
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('bar').style.width = '80%';
+            }, 500);
+        };
+    </script>
+
+</body>
+</html>
