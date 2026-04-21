@@ -1,144 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/png" href="favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Verdict</title>
+    <title>idk</title>
     <style>
-        :root {
-            --bg-color: #0a0a0a;
-            --text-color: #e0e0e0;
-            --accent-color: #3b82f6;
-            --secondary-text: #444;
-        }
-
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: white;
+            color: black;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            padding: 0 5%;
-            overflow: hidden;
-        }
-
-        .main-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 3.5rem;
-            max-width: 900px;
-            width: 100%;
-        }
-
-        .image-container img {
-            width: 280px; 
-            height: auto;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid #1a1a1a;
-        }
-
-        .content-container {
-            text-align: left;
-            flex: 1;
         }
 
         h1 {
+            font-size: 3rem;
             font-weight: 300;
-            letter-spacing: -1px;
-            margin-bottom: 1.5rem;
-            font-size: 2.8rem;
-            margin-top: 0;
-            line-height: 1.1;
+            margin: 0;
         }
 
-        .percentage-container {
-            width: 100%;
-            background: #1a1a1a;
-            border-radius: 20px;
-            height: 6px;
-            margin-bottom: 1rem;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 100%;
-            background: var(--accent-color);
-            border-radius: 20px;
-            transition: width 1.8s cubic-bezier(0.65, 0, 0.35, 1);
-        }
-
-        .percentage-text {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: var(--accent-color);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .footer-link {
+        footer {
             position: absolute;
-            bottom: 30px;
-            font-size: 0.7rem;
+            bottom: 2rem;
+        }
+
+        a {
+            color: black;
             text-decoration: none;
-            color: var(--secondary-text);
-            transition: color 0.3s ease;
-            letter-spacing: 0.5px;
+            font-size: 0.8rem;
+            letter-spacing: 0.1rem;
+            border-bottom: 1px solid black;
+            padding-bottom: 2px;
         }
 
-        .footer-link:hover {
-            color: #888;
-        }
-
-        /* Responsive Layout for smaller screens */
-        @media (max-width: 768px) {
-            .main-wrapper {
-                flex-direction: column;
-                text-align: center;
-                gap: 2rem;
-            }
-            .content-container {
-                text-align: center;
-            }
-            .image-container img {
-                width: 200px;
-            }
+        a:hover {
+            color: gray;
+            border-color: gray;
         }
     </style>
 </head>
 <body>
 
-    <div class="main-wrapper">
-        <div class="image-container">
-            <img src="https://i.ibb.co/R4pGdrbB/dangermarlow.png" alt="DangerMarlow Visual">
-        </div>
+    <h1>idk</h1>
 
-        <div class="content-container">
-            <h1>Is Marlow DangerMario?</h1>
-            
-            <div class="percentage-container">
-                <div class="progress-bar" id="bar"></div>
-            </div>
-            
-            <div class="percentage-text">prolly like 80% or sum idk</div>
-        </div>
-    </div>
-
-    <a href="https://shrinkme.click/marlow" class="footer-link">marlow official response</a>
-
-    <script>
-        window.onload = () => {
-            // Slight delay before the bar fills for visual effect
-            setTimeout(() => {
-                document.getElementById('bar').style.width = '80%';
-            }, 400);
-        };
-    </script>
+    <footer>
+        <a href="https://shrinkme.click/marlow">can you complete this captcha so i get paid ty papa</a>
+    </footer>
 
 </body>
 </html>
