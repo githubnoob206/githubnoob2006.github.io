@@ -50,51 +50,28 @@
 
     <footer>
     <a href="https://www.google.com" target="_blank" class="ad-banner">
-        <div class="ad-content">
-            <span class="ad-label">Ad</span>
-            <span class="ad-text">
-                Search anything instantly with <strong>Google</strong>
-            </span>
-        </div>
+        don't click this i'm warning you
     </a>
 </footer>
 
 <style>
 .ad-banner {
     display: block;
-    width: 320px;
-    border: 1px solid #dadce0;
-    border-radius: 8px;
-    padding: 10px 14px;
+    width: 100%;
+    max-width: 420px;
+    background-color: #1a73e8; /* Google-ish blue */
+    color: black;
     text-decoration: none;
-    background-color: #ffffff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: all 0.2s ease;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: center;
+    border: 1px solid black;
+    border-radius: 0; /* sharp corners */
 }
 
 .ad-banner:hover {
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-    transform: translateY(-1px);
-}
-
-.ad-content {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.ad-label {
-    font-size: 0.7rem;
-    background: #e8f0fe;
-    color: #1a73e8;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: 500;
-}
-
-.ad-text {
-    font-size: 0.85rem;
-    color: #202124;
+    background-color: #1669c1;
 }
 </style>
 
