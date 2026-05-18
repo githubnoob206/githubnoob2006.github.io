@@ -634,36 +634,36 @@
   </section>
 
 <!-- ABOUT ME -->
-<section id="about" class="reveal">
-  <p class="contact-label">About Me</p>
+  <section id="about" class="reveal">
+    <p class="contact-label">About Me</p>
 
-  <p class="contact-line">
-    <span id="age"></span>
-  </p>
-</section>
+    <p class="contact-line">
+      <span id="age"></span>
+    </p>
+  </section>
 
-<script>
-const birthDate = new Date("2009-12-28T00:00:00");
+  <script>
+  const birthDate = new Date("2009-12-28T00:00:00");
 
-function updateAge() {
-    const now = new Date();
+  function updateAge() {
+      const now = new Date();
 
-    let diff = now - birthDate;
+      let diff = now - birthDate;
 
-    const seconds = Math.floor(diff / 1000) % 60;
-    const minutes = Math.floor(diff / (1000 * 60)) % 60;
-    const hours = Math.floor(diff / (1000 * 60 * 60)) % 24;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24)) % 30;
-    const months = Math.floor(diff / (1000 * 60 * 60 * 24 * 30)) % 12;
-    const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+      const seconds = Math.floor(diff / 1000) % 60;
+      const minutes = Math.floor(diff / (1000 * 60)) % 60;
+      const hours = Math.floor(diff / (1000 * 60 * 60)) % 24;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24)) % 30;
+      const months = Math.floor(diff / (1000 * 60 * 60 * 24 * 30)) % 12;
+      const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
 
-    document.getElementById("age").innerText =
-        `${years} years, ${months} months, ${days} days old`;
-}
+      document.getElementById("age").innerText =
+          `${years} years, ${months} months, ${days} days old`;
+  }
 
-updateAge();
-setInterval(updateAge, 1000);
-</script>
+  updateAge();
+  setInterval(updateAge, 1000);
+  </script>
   
   <!-- CONTACT -->
   <section id="contact" class="reveal">
