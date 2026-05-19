@@ -98,6 +98,17 @@
       animation-delay: 1.8s;
     }
 
+  .about-row {
+    display: flex; 
+    align-items: center;  
+    gap: 20px;     
+    justify-content: flex-start; 
+   }
+
+  .contact-label, .contact-line {
+    margin: 0;
+  }
+
     @keyframes slideUp {
       to { transform: translateY(0); }
     }
@@ -633,15 +644,16 @@
     </div>
   </section>
 
-<!-- ABOUT ME -->
-  <section id="about" class="reveal">
-    <div class="about-row">
-      <p class="contact-label">About Me</p>
-      <p class="contact-line">
-        <span id="age"></span>
-      </p>
-    </div>
-  </section>
+
+<!------ ABOUT ME ---------->
+<section id="about" class="reveal">
+  <div class="about-row">
+    <p class="contact-label">About Me</p>
+    <p class="contact-line">
+      <span id="age"></span>
+    </p>
+  </div>
+</section>
 
   <script>
   const birthDate = new Date("2009-12-28T00:00:00");
