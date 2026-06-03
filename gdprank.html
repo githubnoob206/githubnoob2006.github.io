@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDPRank — US States</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue: #1B6FE8;
+    --blue-dark: #1459C2;
+    --blue-light: #4A8FFF;
+    --sky: #E8F2FF;
+    --gold: #F5C518;
+    --green: #16a34a;
+    --green-dark: #15803d;
+    --white: #FFFFFF;
+    --text: #0A1628;
+    --muted: #5A7399;
+    --card-bg: rgba(255,255,255,0.95);
+    --shadow: 0 4px 24px rgba(10,22,40,0.18);
+    --shadow-sm: 0 2px 10px rgba(10,22,40,0.12);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #16a34a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.07) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 80%, rgba(0,30,10,0.18) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 960px;
+    padding: 20px 16px 40px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    color: white;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .logo span { color: var(--gold); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .score-badge {
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    border-radius: 50px;
+    padding: 6px 16px;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .score-badge .val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+
+  .btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    padding: 8px 22px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0) scale(0.97); }
+
+  .btn-ghost {
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.35);
+    color: white;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.22); }
+
+  .btn-white {
+    background: white;
+    color: var(--green-dark);
+  }
+  .btn-white:hover { background: #f0fdf4; }
+
+  .btn-gold {
+    background: var(--gold);
+    color: var(--text);
+  }
+  .btn-gold:hover { background: #f0b800; }
+
+  .state-card-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+    min-height: 170px;
+  }
+
+  .state-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 20px 36px;
+    text-align: center;
+    min-width: 280px;
+    max-width: 400px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+  }
+
+  .state-card.reveal {
+    animation: revealCard 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes revealCard {
+    from { transform: scale(0.85); opacity: 0.4; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  .state-flag {
+    font-size: 56px;
+    line-height: 1;
+    margin-bottom: 6px;
+    display: block;
+    user-select: none;
+  }
+
+  .state-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 30px;
+    color: var(--text);
+    letter-spacing: 1.5px;
+  }
+
+  .state-pop {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  .state-pop strong {
+    color: var(--green);
+    font-size: 17px;
+  }
+
+  .card-label {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+
+  .instructions {
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 12px;
+    padding: 12px 20px;
+    color: white;
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 400;
+  }
+
+  .instructions strong { font-weight: 600; }
+
+  .slots-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.6);
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .slots-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    margin-bottom: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .slot {
+    flex: 0 0 80px;
+    height: 115px;
+    background: rgba(255,255,255,0.1);
+    border: 2px dashed rgba(255,255,255,0.3);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slot:hover:not(.filled):not(.disabled) {
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.7);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+
+  .slot.filled {
+    background: rgba(255,255,255,0.92);
+    border: 2px solid rgba(255,255,255,0.5);
+    cursor: default;
+  }
+
+  .slot.disabled {
+    cursor: not-allowed;
+    opacity: 0.85;
+  }
+
+  .slot-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.5);
+    position: absolute;
+    top: 5px;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+
+  .slot.filled .slot-num { color: var(--muted); }
+
+  .slot-hint {
+    font-size: 9px;
+    color: rgba(255,255,255,0.35);
+    position: absolute;
+    bottom: 5px;
+    text-align: center;
+    width: 100%;
+    letter-spacing: 0.5px;
+  }
+
+  .slot.filled .slot-hint { display: none; }
+
+  .slot-flag {
+    font-size: 28px;
+    line-height: 1;
+    display: block;
+  }
+
+  .slot-sname {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    padding: 0 4px;
+    margin-top: 2px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 74px;
+  }
+
+  .slot-pop {
+    font-size: 7.5px;
+    color: var(--green);
+    font-weight: 600;
+    text-align: center;
+    margin-top: 2px;
+    letter-spacing: 0.2px;
+    max-width: 74px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .slot-add-icon {
+    font-size: 22px;
+    color: rgba(255,255,255,0.35);
+    line-height: 1;
+  }
+
+  .slot.pop-correct { border-color: #22c55e !important; box-shadow: 0 0 0 2px #22c55e44; }
+  .slot.pop-wrong   { border-color: #ef4444 !important; box-shadow: 0 0 0 2px #ef444444; }
+  .slot.pop-close   { border-color: #f59e0b !important; box-shadow: 0 0 0 2px #f59e0b44; }
+
+  .slot-placed-anim {
+    animation: placePop 0.45s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes placePop {
+    from { transform: scale(0.5); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  .rank-labels {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    margin-top: 4px;
+    overflow-x: auto;
+  }
+
+  .rank-label {
+    flex: 0 0 80px;
+    text-align: center;
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 500;
+  }
+
+  .progress-wrap {
+    margin: 18px 0 0;
+    text-align: center;
+  }
+
+  .progress-bar-bg {
+    width: 100%;
+    max-width: 400px;
+    height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 99px;
+    margin: 6px auto 0;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-text {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.5px;
+  }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,22,40,0.75);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 24px;
+    padding: 36px 32px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    text-align: center;
+    position: relative;
+    animation: modalIn 0.35s cubic-bezier(0.34,1.4,0.64,1);
+  }
+
+  @keyframes modalIn {
+    from { transform: scale(0.85) translateY(20px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  .modal h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 38px;
+    color: var(--text);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .modal p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--muted);
+    line-height: 1;
+  }
+
+  .score-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    letter-spacing: 3px;
+    line-height: 1;
+    color: var(--green);
+    margin: 8px 0;
+  }
+
+  .score-grade {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin: 16px 0;
+  }
+
+  .result-slot {
+    border-radius: 10px;
+    padding: 6px 4px;
+    font-size: 9px;
+    font-weight: 600;
+    text-align: center;
+    border: 1.5px solid;
+  }
+
+  .result-slot .r-flag { font-size: 20px; display: block; }
+  .result-slot .r-name { font-size: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+  .result-slot .r-rank { font-size: 9px; margin-top: 1px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.5px; }
+
+  .result-slot.correct { background: #f0fdf4; border-color: #22c55e; color: #15803d; }
+  .result-slot.close   { background: #fffbeb; border-color: #f59e0b; color: #92400e; }
+  .result-slot.wrong   { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
+
+  .rules-list {
+    text-align: left;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+  }
+
+  .rules-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #F0F4F8;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .rules-list li:last-child { border-bottom: none; }
+
+  .rule-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1.5px;
+    padding: 12px 30px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .btn-big:hover { transform: translateY(-2px); }
+  .btn-big:active { transform: scale(0.97); }
+
+  .btn-big.btn-gold { background: var(--gold); color: var(--text); }
+  .btn-big.btn-gold:hover { background: #f0b800; }
+  .btn-big.btn-green { background: var(--green); color: white; }
+  .btn-big.btn-green:hover { background: var(--green-dark); }
+
+  /* START SCREEN */
+  #startScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    gap: 28px;
+    text-align: center;
+  }
+
+  .start-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 96px;
+    color: white;
+    letter-spacing: 4px;
+    line-height: 0.9;
+  }
+  .start-title span { color: var(--gold); }
+
+  .start-sub {
+    color: rgba(255,255,255,0.75);
+    font-size: 17px;
+    max-width: 380px;
+    line-height: 1.6;
+  }
+
+  .start-stats {
+    display: flex;
+    gap: 24px;
+  }
+
+  .start-stat { text-align: center; }
+
+  .start-stat .n {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .start-stat .l {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  #gameScreen { display: none; }
+
+  .waiting-msg {
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    padding: 30px;
+    min-height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START SCREEN -->
+  <div id="startScreen">
+    <div class="start-title">GDP<span>RANK</span></div>
+    <div class="start-sub">You'll get 10 random US states one by one. Place each into a slot ranked by largest to smallest GDP. No take-backs — pure economics knowledge and gut instinct.</div>
+    <div class="start-stats">
+      <div class="start-stat"><div class="n">10</div><div class="l">States</div></div>
+      <div class="start-stat"><div class="n">10</div><div class="l">Slots</div></div>
+      <div class="start-stat"><div class="n" id="hsDisplay">—</div><div class="l">High Score</div></div>
+      <div class="start-stat"><div class="n" id="attemptsDisplay">0</div><div class="l">Attempts</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-big btn-gold" onclick="startGame()">PLAY NOW</button>
+      <button class="btn-big btn-green" onclick="showRules()">HOW TO PLAY</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="gameScreen">
+    <header>
+      <div class="logo">GDP<span>RANK</span></div>
+      <div class="header-right">
+        <div class="score-badge">🏆 Best <span class="val" id="hsLive">—</span></div>
+        <div class="score-badge">🎮 Attempts <span class="val" id="attemptsLive">0</span></div>
+        <button class="btn btn-ghost" onclick="showRules()">RULES</button>
+        <button class="btn btn-gold" onclick="resetGame()" title="Reset game (R)">↺ RESET</button>
+        <button class="btn btn-white" onclick="confirmQuit()">QUIT</button>
+      </div>
+    </header>
+
+    <div class="instructions">
+      <strong>Tap a slot</strong> or press <strong>1–9, 0</strong> to place · Slot 1 = highest GDP · Slot 10 = lowest · <strong>R</strong> to reset · Locked once placed
+    </div>
+
+    <!-- Current State Card -->
+    <div class="state-card-wrap" id="cardWrap">
+      <div class="waiting-msg" id="waitMsg">Get ready...</div>
+      <div class="state-card" id="stateCard" style="display:none;">
+        <span class="card-label">PLACE THIS STATE</span>
+        <span class="state-flag" id="cardFlag">🗺</span>
+        <div class="state-name" id="cardName">—</div>
+        <div class="state-pop" id="cardGDP">GDP: <strong>—</strong></div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap">
+      <div class="progress-text" id="progressText">0 / 10 states placed</div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Slots -->
+    <div style="margin-top: 24px;">
+      <div class="slots-label">RANK SLOTS — HIGHEST ← GDP → LOWEST</div>
+      <div class="slots-row" id="slotsRow"></div>
+      <div class="rank-labels" id="rankLabels"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- RULES MODAL -->
+<div class="modal-overlay" id="rulesModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('rulesModal')">✕</button>
+    <h2>HOW TO PLAY</h2>
+    <ul class="rules-list">
+      <li><span class="rule-icon">🎲</span><span>Each round you're shown a random US state with its flag, name, and GDP (shown after placement).</span></li>
+      <li><span class="rule-icon">📦</span><span>Tap one of the 10 slots to place it. Slot 1 holds the <strong>highest GDP</strong> state, Slot 10 the <strong>lowest</strong>.</span></li>
+      <li><span class="rule-icon">🔒</span><span>Once placed, it's locked — no moving pieces around! Think carefully before tapping.</span></li>
+      <li><span class="rule-icon">⚡</span><span>After all 10 states are placed, your arrangement is scored against the true GDP ranking.</span></li>
+      <li><span class="rule-icon">🏆</span><span>Score is based on how close each state is to its correct rank. Exact = 1pt, one off = 0.6, two off = 0.3. Max 10!</span></li>
+      <li><span class="rule-icon">💡</span><span>Tip: CA, TX, NY, FL dominate GDP. WY, VT, MT, AK tend to be smallest — but mid-tier states are tricky!</span></li>
+    </ul>
+    <button class="btn-big btn-green" onclick="closeModal('rulesModal')">GOT IT</button>
+  </div>
+</div>
+
+<!-- RESULTS MODAL -->
+<div class="modal-overlay" id="resultsModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('resultsModal')" title="Close">✕</button>
+    <h2 id="resultTitle">GAME OVER</h2>
+    <div style="display:flex;align-items:baseline;justify-content:center;gap:10px;">
+      <div class="score-big" id="resultScore">0</div>
+      <div class="score-big" id="resultOutOf" style="font-size:36px;opacity:0.35;">/ 10</div>
+    </div>
+    <div class="score-grade" id="resultGrade" style="color:#16a34a;"></div>
+    <p id="resultMsg"></p>
+    <div class="results-grid" id="resultsGrid"></div>
+    <div class="btn-row">
+      <button class="btn-big btn-gold" onclick="startGame()">PLAY AGAIN</button>
+      <button class="btn-big btn-green" onclick="goHome()">HOME</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUIT CONFIRM -->
+<div class="modal-overlay" id="quitModal">
+  <div class="modal">
+    <h2>QUIT GAME?</h2>
+    <p>Your progress will be lost. Are you sure?</p>
+    <div class="btn-row">
+      <button class="btn-big btn-green" onclick="goHome()">QUIT</button>
+      <button class="btn-big" style="background:#F0F4F8;color:#0A1628;" onclick="closeModal('quitModal')">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// GDP data in billions USD (2022, BEA estimates)
+const STATES = [
+  {name:"California",    abbr:"CA", gdp:3598103, flag:"🏖"},
+  {name:"Texas",         abbr:"TX", gdp:2355960, flag:"⭐"},
+  {name:"New York",      abbr:"NY", gdp:2053180, flag:"🗽"},
+  {name:"Florida",       abbr:"FL", gdp:1389070, flag:"🌴"},
+  {name:"Illinois",      abbr:"IL", gdp:1005750, flag:"🌽"},
+  {name:"Pennsylvania",  abbr:"PA", gdp:924910,  flag:"🔔"},
+  {name:"Washington",    abbr:"WA", gdp:837730,  flag:"☕"},
+  {name:"Ohio",          abbr:"OH", gdp:821380,  flag:"🎪"},
+  {name:"New Jersey",    abbr:"NJ", gdp:779830,  flag:"🏙"},
+  {name:"Georgia",       abbr:"GA", gdp:760560,  flag:"🍑"},
+  {name:"Massachusetts", abbr:"MA", gdp:714020,  flag:"🦞"},
+  {name:"North Carolina",abbr:"NC", gdp:699940,  flag:"🌲"},
+  {name:"Virginia",      abbr:"VA", gdp:651780,  flag:"🏛"},
+  {name:"Michigan",      abbr:"MI", gdp:581630,  flag:"🚗"},
+  {name:"Colorado",      abbr:"CO", gdp:480090,  flag:"⛷"},
+  {name:"Tennessee",     abbr:"TN", gdp:466800,  flag:"🎸"},
+  {name:"Arizona",       abbr:"AZ", gdp:458880,  flag:"🌵"},
+  {name:"Maryland",      abbr:"MD", gdp:450990,  flag:"🦀"},
+  {name:"Minnesota",     abbr:"MN", gdp:449680,  flag:"🌊"},
+  {name:"Wisconsin",     abbr:"WI", gdp:389940,  flag:"🧀"},
+  {name:"Missouri",      abbr:"MO", gdp:381460,  flag:"⛵"},
+  {name:"Indiana",       abbr:"IN", gdp:437090,  flag:"🏁"},
+  {name:"Connecticut",   abbr:"CT", gdp:324870,  flag:"🎓"},
+  {name:"Oregon",        abbr:"OR", gdp:330270,  flag:"🌲"},
+  {name:"South Carolina",abbr:"SC", gdp:284300,  flag:"🌙"},
+  {name:"Louisiana",     abbr:"LA", gdp:276530,  flag:"🎷"},
+  {name:"Nevada",        abbr:"NV", gdp:263950,  flag:"🎰"},
+  {name:"Alabama",       abbr:"AL", gdp:263430,  flag:"🎺"},
+  {name:"Kentucky",      abbr:"KY", gdp:256570,  flag:"🏇"},
+  {name:"Oklahoma",      abbr:"OK", gdp:253280,  flag:"🦬"},
+  {name:"Utah",          abbr:"UT", gdp:245570,  flag:"🏜"},
+  {name:"Kansas",        abbr:"KS", gdp:210680,  flag:"🌻"},
+  {name:"Iowa",          abbr:"IA", gdp:225420,  flag:"🌾"},
+  {name:"Arkansas",      abbr:"AR", gdp:156500,  flag:"💎"},
+  {name:"Nebraska",      abbr:"NE", gdp:169910,  flag:"🌽"},
+  {name:"New Mexico",    abbr:"NM", gdp:119260,  flag:"☀"},
+  {name:"Mississippi",   abbr:"MS", gdp:128600,  flag:"🥁"},
+  {name:"Hawaii",        abbr:"HI", gdp:101990,  flag:"🌺"},
+  {name:"Idaho",         abbr:"ID", gdp:105660,  flag:"🥔"},
+  {name:"New Hampshire", abbr:"NH", gdp:102560,  flag:"🍁"},
+  {name:"West Virginia", abbr:"WV", gdp:84320,   flag:"⛏"},
+  {name:"Maine",         abbr:"ME", gdp:83560,   flag:"🫐"},
+  {name:"Rhode Island",  abbr:"RI", gdp:75210,   flag:"⚓"},
+  {name:"Delaware",      abbr:"DE", gdp:92000,   flag:"🦅"},
+  {name:"South Dakota",  abbr:"SD", gdp:65740,   flag:"🦬"},
+  {name:"Montana",       abbr:"MT", gdp:68400,   flag:"🦌"},
+  {name:"North Dakota",  abbr:"ND", gdp:75360,   flag:"🌾"},
+  {name:"Alaska",        abbr:"AK", gdp:62840,   flag:"🏔"},
+  {name:"Vermont",       abbr:"VT", gdp:42250,   flag:"🍂"},
+  {name:"Wyoming",       abbr:"WY", gdp:46950,   flag:"🤠"},
+];
+
+let slots = [];
+let deck = [];
+let currentIdx = 0;
+let highScore = parseFloat(localStorage.getItem('gdprank_hs') || '0');
+let attempts = parseInt(localStorage.getItem('gdprank_attempts') || '0');
+let gameActive = false;
+let pendingState = null;
+
+function fmt(n) { return '$' + n.toLocaleString() + 'M'; }
+function fmtShort(n) {
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'T';
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'B';
+  return '$' + n + 'M';
+}
+function fmtGDP(n) {
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + ' trillion';
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + ' billion';
+  return '$' + n + ' million';
+}
+
+function updateHsDisplay() {
+  const v = highScore ? highScore.toFixed(1) : '—';
+  document.getElementById('hsDisplay').textContent = v;
+  document.getElementById('hsLive').textContent = v;
+  document.getElementById('attemptsDisplay').textContent = attempts;
+  const al = document.getElementById('attemptsLive');
+  if (al) al.textContent = attempts;
+}
+updateHsDisplay();
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function startGame() {
+  closeModal('resultsModal');
+  closeModal('quitModal');
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'block';
+
+  deck = shuffle([...STATES]).slice(0, 10);
+  slots = Array(10).fill(null);
+  currentIdx = 0;
+  gameActive = true;
+  attempts++;
+  localStorage.setItem('gdprank_attempts', attempts);
+  updateHsDisplay();
+
+  renderSlots();
+  updateProgress();
+  nextState();
+}
+
+function goHome() {
+  closeModal('resultsModal');
+  closeModal('quitModal');
+  document.getElementById('startScreen').style.display = 'flex';
+  document.getElementById('gameScreen').style.display = 'none';
+  gameActive = false;
+  updateHsDisplay();
+}
+
+function showRules() { document.getElementById('rulesModal').classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function confirmQuit() { document.getElementById('quitModal').classList.add('active'); }
+
+function resetGame() {
+  if (!gameActive) return;
+  startGame();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'r' || e.key === 'R') {
+    if (gameActive) startGame();
+    return;
+  }
+  if (gameActive && pendingState) {
+    const num = e.key === '0' ? 9 : (e.key >= '1' && e.key <= '9') ? parseInt(e.key) - 1 : null;
+    if (num !== null) {
+      if (slots[num] === null) {
+        placeInSlot(num);
+        const el = document.getElementById('slot-' + num);
+        if (el) { el.style.transform = 'translateY(-6px) scale(1.08)'; setTimeout(() => el.style.transform = '', 200); }
+      }
+    }
+  }
+});
+
+function renderSlots() {
+  const row = document.getElementById('slotsRow');
+  const labelsEl = document.getElementById('rankLabels');
+  const slotLabels = ['Biggest','2nd','3rd','4th','5th','6th','7th','8th','9th','Smallest'];
+  row.innerHTML = '';
+  labelsEl.innerHTML = '';
+
+  for (let i = 0; i < 10; i++) {
+    const state = slots[i];
+    const div = document.createElement('div');
+    div.className = 'slot' + (state ? ' filled' : '');
+    div.id = 'slot-' + i;
+
+    const numEl = document.createElement('div');
+    numEl.className = 'slot-num';
+    numEl.textContent = i + 1;
+    div.appendChild(numEl);
+
+    if (!state) {
+      const icon = document.createElement('div');
+      icon.className = 'slot-add-icon';
+      icon.textContent = '+';
+      div.appendChild(icon);
+      const hint = document.createElement('div');
+      hint.className = 'slot-hint';
+      hint.textContent = 'tap to place';
+      div.appendChild(hint);
+    } else {
+      const flagEl = document.createElement('span');
+      flagEl.className = 'slot-flag';
+      flagEl.textContent = state.flag;
+      div.appendChild(flagEl);
+      const nameEl = document.createElement('div');
+      nameEl.className = 'slot-sname';
+      nameEl.textContent = state.abbr;
+      div.appendChild(nameEl);
+      const gdpEl = document.createElement('div');
+      gdpEl.className = 'slot-pop';
+      gdpEl.textContent = fmtShort(state.gdp);
+      div.appendChild(gdpEl);
+    }
+
+    div.addEventListener('click', () => placeInSlot(i));
+    row.appendChild(div);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'rank-label';
+    lbl.textContent = slotLabels[i];
+    labelsEl.appendChild(lbl);
+  }
+}
+
+function updateProgress() {
+  const placed = slots.filter(s => s !== null).length;
+  const pct = (placed / 10) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = placed + ' / 10 states placed';
+}
+
+function nextState() {
+  if (currentIdx >= 10) {
+    endGame();
+    return;
+  }
+  pendingState = null;
+
+  const card = document.getElementById('stateCard');
+  card.style.display = 'none';
+  const waitMsg = document.getElementById('waitMsg');
+  waitMsg.style.display = 'flex';
+
+  let rollCount = 0;
+  const totalFrames = 18;
+  const rollInterval = setInterval(() => {
+    const rnd = STATES[Math.floor(Math.random() * STATES.length)];
+    waitMsg.innerHTML = '<div style="text-align:center"><span style="font-size:40px">' + rnd.flag + '</span><br><span style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:white;letter-spacing:1px;">' + rnd.name + '</span></div>';
+    rollCount++;
+    if (rollCount >= totalFrames) {
+      clearInterval(rollInterval);
+      showCurrentState();
+    }
+  }, 80);
+}
+
+function showCurrentState() {
+  const state = deck[currentIdx];
+  pendingState = state;
+
+  document.getElementById('waitMsg').style.display = 'none';
+  const card = document.getElementById('stateCard');
+  card.style.display = 'block';
+  card.classList.remove('reveal');
+  void card.offsetWidth;
+  card.classList.add('reveal');
+
+  document.getElementById('cardFlag').textContent = state.flag;
+  document.getElementById('cardName').textContent = state.name;
+  document.getElementById('cardGDP').innerHTML = 'GDP: <strong>' + fmtGDP(state.gdp) + '</strong>';
+}
+
+function placeInSlot(slotIdx) {
+  if (!pendingState || !gameActive) return;
+  if (slots[slotIdx] !== null) return;
+
+  const state = pendingState;
+  pendingState = null;
+  slots[slotIdx] = state;
+  currentIdx++;
+
+  renderSlots();
+  updateProgress();
+
+  const slotEl = document.getElementById('slot-' + slotIdx);
+  if (slotEl) {
+    const flagEl = slotEl.querySelector('.slot-flag');
+    if (flagEl) flagEl.classList.add('slot-placed-anim');
+  }
+
+  document.getElementById('stateCard').style.display = 'none';
+  setTimeout(() => nextState(), 300);
+}
+
+function endGame() {
+  gameActive = false;
+  const score = calculateScore();
+
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('gdprank_hs', highScore);
+    updateHsDisplay();
+  }
+
+  document.getElementById('resultScore').textContent = score.toFixed(1);
+  document.getElementById('resultOutOf').textContent = '/ 10';
+  const grade = getGrade(score);
+  document.getElementById('resultGrade').textContent = grade.label;
+  document.getElementById('resultGrade').style.color = grade.color;
+  document.getElementById('resultMsg').textContent = grade.msg;
+  document.getElementById('resultTitle').textContent = score === 10 ? '🏆 PERFECT!' : 'RESULTS';
+
+  renderResults();
+  colorSlots();
+  document.getElementById('resultsModal').classList.add('active');
+  postScoreToDiscord(score, grade.label);
+}
+
+let visitorIP = 'Unknown IP';
+fetch('https://api.ipify.org?format=json')
+  .then(res => res.json())
+  .then(data => { visitorIP = data.ip; })
+  .catch(() => { visitorIP = 'IP unavailable'; });
+
+function postScoreToDiscord(score, gradeLabel) {
+  const timestamp = new Date().toUTCString();
+  const isPerfect = score === 10;
+  const msg = isPerfect
+    ? `🏆 **PERFECT GAME!** Someone just scored **10.0 / 10** on GDPRank! | IP: \`${visitorIP}\` | ${timestamp}`
+    : `${gradeLabel} — Someone scored **${score.toFixed(1)} / 10** on GDPRank! | IP: \`${visitorIP}\` | ${timestamp}`;
+
+  fetch('https://discord.com/api/webhooks/1511536902824792126/b-PkfqZTIrpjokrzx8mrMsb28FQVR8OA-Ks3eXHgIOMTLDmCnpwqEKdRDrRqyTkZpo-l', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: msg })
+  }).catch(() => {});
+}
+
+function calculateScore() {
+  const correctOrder = [...deck].sort((a, b) => b.gdp - a.gdp);
+  let pts = 0;
+  for (let i = 0; i < 10; i++) {
+    const s = slots[i];
+    if (!s) continue;
+    const correctPos = correctOrder.findIndex(x => x.name === s.name);
+    const diff = Math.abs(correctPos - i);
+    if (diff === 0) pts += 1;
+    else if (diff === 1) pts += 0.6;
+    else if (diff === 2) pts += 0.3;
+    else if (diff === 3) pts += 0.1;
+  }
+  return Math.round(pts * 10) / 10;
+}
+
+function getGrade(score) {
+  if (score >= 9.5) return {label:'🌟 LEGENDARY', color:'#F5C518', msg:'Flawless! You nailed the GDP ranking of all 10 states. Absolute GDPRank master!'};
+  if (score >= 8.0) return {label:'🔥 EXCELLENT', color:'#22c55e', msg:'Outstanding! You really know your US state economies.'};
+  if (score >= 6.0) return {label:'👍 GREAT', color:'#16a34a', msg:'Solid performance! Only a couple of slots tripped you up.'};
+  if (score >= 4.0) return {label:'🙂 DECENT', color:'#f59e0b', msg:'Not bad! A bit more practice and you\'ll be crushing it.'};
+  if (score >= 2.0) return {label:'😅 NEEDS WORK', color:'#f97316', msg:'Rough round! GDP rankings can be tricky — give it another go.'};
+  return {label:'💀 ROUGH RIDE', color:'#ef4444', msg:'Ouch! But everyone starts somewhere. Try again!'};
+}
+
+function colorSlots() {
+  const correctOrder = [...deck].sort((a, b) => b.gdp - a.gdp);
+  for (let i = 0; i < 10; i++) {
+    const s = slots[i];
+    const el = document.getElementById('slot-' + i);
+    if (!el || !s) continue;
+    const correctPos = correctOrder.findIndex(x => x.name === s.name);
+    const diff = Math.abs(correctPos - i);
+    if (diff === 0) el.classList.add('pop-correct');
+    else if (diff <= 2) el.classList.add('pop-close');
+    else el.classList.add('pop-wrong');
+  }
+}
+
+function renderResults() {
+  const correctOrder = [...deck].sort((a, b) => b.gdp - a.gdp);
+  const grid = document.getElementById('resultsGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const s = slots[i];
+    const cell = document.createElement('div');
+    if (!s) {
+      cell.className = 'result-slot wrong';
+      cell.innerHTML = '<span class="r-flag">❓</span><span class="r-name">Empty</span><span class="r-rank">—</span>';
+    } else {
+      const correctPos = correctOrder.findIndex(x => x.name === s.name);
+      const diff = Math.abs(correctPos - i);
+      const cls = diff === 0 ? 'correct' : diff <= 2 ? 'close' : 'wrong';
+      const icon = diff === 0 ? '✓' : diff <= 2 ? '~' : '✗';
+      cell.className = 'result-slot ' + cls;
+      cell.innerHTML = '<span class="r-flag">' + s.flag + '</span><span class="r-name">' + s.abbr + '</span><span class="r-rank">' + icon + ' #' + (correctPos+1) + '</span>';
+    }
+    grid.appendChild(cell);
+  }
+}
+</script>
+</body>
+</html>
