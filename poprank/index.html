@@ -557,6 +557,13 @@
   .btn-blue { background: var(--blue); color: white; }
   .btn-blue:hover { background: var(--blue-dark); }
 
+  .btn-big.btn-ghost {
+  background: rgba(255,255,255,0.12);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  color: white;
+  }
+  .btn-big.btn-ghost:hover { background: rgba(255,255,255,0.22); }
+
   #startScreen {
     display: flex;
     flex-direction: column;
@@ -724,6 +731,7 @@
     <div class="btn-row">
       <button class="btn-big btn-gold" onclick="startGame()">PLAY AGAIN</button>
       <button class="btn-big btn-blue" onclick="goHome()">HOME</button>
+      <a href="https://taysh.xyz/gdprank" class="btn-big btn-ghost" style="text-decoration:none;">💰 PLAY GDPRANK</a>
     </div>
   </div>
 </div>
