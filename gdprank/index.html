@@ -533,6 +533,12 @@
   .btn-big.btn-green { background: var(--green); color: white; }
   .btn-big.btn-green:hover { background: var(--green-dark); }
 
+  .btn-big.btn-ghost {
+  background: rgba(255,255,255,0.12);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  color: white;
+}
+  .btn-big.btn-ghost:hover { background: rgba(255,255,255,0.22); }
   /* START SCREEN */
   #startScreen {
     display: flex;
@@ -613,6 +619,7 @@
     <div class="btn-row">
       <button class="btn-big btn-gold" onclick="startGame()">PLAY NOW</button>
       <button class="btn-big btn-green" onclick="showRules()">HOW TO PLAY</button>
+      <a href="https://taysh.xyz/poprank" class="btn-big btn-ghost" style="text-decoration:none;">🏙 PLAY POPRANK</a>
     </div>
   </div>
 
