@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PopRank — US States</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue: #1B6FE8;
+    --blue-dark: #1459C2;
+    --blue-light: #4A8FFF;
+    --sky: #E8F2FF;
+    --gold: #F5C518;
+    --white: #FFFFFF;
+    --text: #0A1628;
+    --muted: #5A7399;
+    --card-bg: rgba(255,255,255,0.95);
+    --shadow: 0 4px 24px rgba(10,22,40,0.18);
+    --shadow-sm: 0 2px 10px rgba(10,22,40,0.12);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #1B6FE8;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* BG pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.07) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 80%, rgba(0,0,50,0.15) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 960px;
+    padding: 20px 16px 40px;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    color: white;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .logo span {
+    color: var(--gold);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .score-badge {
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    border-radius: 50px;
+    padding: 6px 16px;
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .score-badge .val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+
+  .btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    padding: 8px 22px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0) scale(0.97); }
+
+  .btn-ghost {
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.35);
+    color: white;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.22); }
+
+  .btn-white {
+    background: white;
+    color: var(--blue-dark);
+  }
+  .btn-white:hover { background: #EEF5FF; }
+
+  .btn-gold {
+    background: var(--gold);
+    color: var(--text);
+  }
+  .btn-gold:hover { background: #f0b800; }
+
+  /* CURRENT STATE CARD */
+  .state-card-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+    min-height: 170px;
+  }
+
+  .state-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 20px 36px;
+    text-align: center;
+    min-width: 280px;
+    max-width: 400px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+  }
+
+  .state-card.rolling {
+    animation: rollCard 0.08s ease infinite alternate;
+  }
+
+  @keyframes rollCard {
+    from { transform: translateY(-2px); }
+    to   { transform: translateY(2px); }
+  }
+
+  .state-card.reveal {
+    animation: revealCard 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes revealCard {
+    from { transform: scale(0.85); opacity: 0.4; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  .state-flag {
+    font-size: 56px;
+    line-height: 1;
+    margin-bottom: 6px;
+    display: block;
+    user-select: none;
+  }
+
+  .state-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 30px;
+    color: var(--text);
+    letter-spacing: 1.5px;
+  }
+
+  .state-pop {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  .state-pop strong {
+    color: var(--blue);
+    font-size: 17px;
+  }
+
+  .card-label {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+
+  /* INSTRUCTIONS */
+  .instructions {
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 12px;
+    padding: 12px 20px;
+    color: white;
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 400;
+  }
+
+  .instructions strong { font-weight: 600; }
+
+  /* SLOTS GRID */
+  .slots-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.6);
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .slots-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    margin-bottom: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .slot {
+    flex: 0 0 80px;
+    height: 115px;
+    background: rgba(255,255,255,0.1);
+    border: 2px dashed rgba(255,255,255,0.3);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slot:hover:not(.filled):not(.disabled) {
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.7);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+
+  .slot.filled {
+    background: rgba(255,255,255,0.92);
+    border: 2px solid rgba(255,255,255,0.5);
+    cursor: default;
+  }
+
+  .slot.disabled {
+    cursor: not-allowed;
+    opacity: 0.85;
+  }
+
+  .slot-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.5);
+    position: absolute;
+    top: 5px;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+
+  .slot.filled .slot-num {
+    color: var(--muted);
+  }
+
+  .slot-hint {
+    font-size: 9px;
+    color: rgba(255,255,255,0.35);
+    position: absolute;
+    bottom: 5px;
+    text-align: center;
+    width: 100%;
+    letter-spacing: 0.5px;
+  }
+
+  .slot.filled .slot-hint { display: none; }
+
+  .slot-flag {
+    font-size: 28px;
+    line-height: 1;
+    display: block;
+  }
+
+  .slot-sname {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    padding: 0 4px;
+    margin-top: 2px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 74px;
+  }
+
+  .slot-pop {
+    font-size: 7.5px;
+    color: var(--blue);
+    font-weight: 600;
+    text-align: center;
+    margin-top: 2px;
+    letter-spacing: 0.2px;
+    max-width: 74px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .slot-multi {
+    font-size: 7px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 1px;
+    font-style: italic;
+  }
+
+  .slot.pop-correct { border-color: #22c55e !important; box-shadow: 0 0 0 2px #22c55e44; }
+  .slot.pop-wrong   { border-color: #ef4444 !important; box-shadow: 0 0 0 2px #ef444444; }
+  .slot.pop-close   { border-color: #f59e0b !important; box-shadow: 0 0 0 2px #f59e0b44; }
+
+  .slot-placed-anim {
+    animation: placePop 0.45s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes placePop {
+    from { transform: scale(0.5); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  /* RANK LABELS */
+  .rank-labels {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    margin-top: 4px;
+    overflow-x: auto;
+  }
+
+  .rank-label {
+    flex: 0 0 80px;
+    text-align: center;
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 500;
+  }
+
+  /* PROGRESS */
+  .progress-wrap {
+    margin: 18px 0 0;
+    text-align: center;
+  }
+
+  .progress-bar-bg {
+    width: 100%;
+    max-width: 400px;
+    height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 99px;
+    margin: 6px auto 0;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-text {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.5px;
+  }
+
+  /* MODAL OVERLAY */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,22,40,0.75);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 24px;
+    padding: 36px 32px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    text-align: center;
+    position: relative;
+    animation: modalIn 0.35s cubic-bezier(0.34,1.4,0.64,1);
+  }
+
+  @keyframes modalIn {
+    from { transform: scale(0.85) translateY(20px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  .modal h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 38px;
+    color: var(--text);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .modal p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--muted);
+    line-height: 1;
+  }
+
+  .score-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    letter-spacing: 3px;
+    line-height: 1;
+    color: var(--blue);
+    margin: 8px 0;
+  }
+
+  .score-grade {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin: 16px 0;
+  }
+
+  .result-slot {
+    border-radius: 10px;
+    padding: 6px 4px;
+    font-size: 9px;
+    font-weight: 600;
+    text-align: center;
+    border: 1.5px solid;
+  }
+
+  .result-slot .r-flag { font-size: 20px; display: block; }
+  .result-slot .r-name { font-size: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+  .result-slot .r-rank { font-size: 9px; margin-top: 1px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.5px; }
+
+  .result-slot.correct { background: #f0fdf4; border-color: #22c55e; color: #15803d; }
+  .result-slot.close   { background: #fffbeb; border-color: #f59e0b; color: #92400e; }
+  .result-slot.wrong   { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
+
+  .rules-list {
+    text-align: left;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+  }
+
+  .rules-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #F0F4F8;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .rules-list li:last-child { border-bottom: none; }
+
+  .rule-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    padding: 13px 36px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .btn-big:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+  .btn-big:active { transform: scale(0.97); }
+
+  .btn-blue { background: var(--blue); color: white; }
+  .btn-blue:hover { background: var(--blue-dark); }
+
+  #startScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .start-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    color: white;
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+
+  .start-title span { color: var(--gold); }
+
+  .start-sub {
+    color: rgba(255,255,255,0.75);
+    font-size: 17px;
+    max-width: 380px;
+    line-height: 1.6;
+  }
+
+  .start-stats {
+    display: flex;
+    gap: 24px;
+  }
+
+  .start-stat {
+    text-align: center;
+  }
+
+  .start-stat .n {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .start-stat .l {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  #gameScreen { display: none; }
+
+  .waiting-msg {
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    padding: 30px;
+    min-height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .slot-add-icon {
+    font-size: 22px;
+    color: rgba(255,255,255,0.35);
+    line-height: 1;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- START SCREEN -->
+  <div id="startScreen">
+    <div class="start-title">POP<span>RANK</span></div>
+    <div class="start-sub">You'll get 10 random US states one by one. Place each into a slot ranked most to least populated. No take-backs — pure knowledge, strategy, and guts.</div>
+    <div class="start-stats">
+      <div class="start-stat"><div class="n">10</div><div class="l">States</div></div>
+      <div class="start-stat"><div class="n">10</div><div class="l">Slots</div></div>
+      <div class="start-stat"><div class="n" id="hsDisplay">—</div><div class="l">High Score</div></div>
+      <div class="start-stat"><div class="n" id="attemptsDisplay">0</div><div class="l">Attempts</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-big btn-gold" onclick="startGame()">PLAY NOW</button>
+      <button class="btn-big btn-blue" onclick="showRules()">HOW TO PLAY</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="gameScreen">
+    <header>
+      <div class="logo">POP<span>RANK</span></div>
+      <div class="header-right">
+        <div class="score-badge">🏆 Best <span class="val" id="hsLive">—</span></div>
+        <div class="score-badge">🎮 Attempts <span class="val" id="attemptsLive">0</span></div>
+        <button class="btn btn-ghost" onclick="showRules()">RULES</button>
+        <button class="btn btn-gold" onclick="resetGame()" title="Reset game (R)">↺ RESET</button>
+        <button class="btn btn-white" onclick="confirmQuit()">QUIT</button>
+      </div>
+    </header>
+
+    <div class="instructions">
+    <strong>Tap a slot</strong> or press <strong>1–9, 0</strong> to place · Slot 1 = most populated · Slot 10 = least · <strong>R</strong> to reset · Locked once placed
+    </div>
+
+    <!-- Current State -->
+    <div class="state-card-wrap" id="cardWrap">
+      <div class="waiting-msg" id="waitMsg">Get ready...</div>
+      <div class="state-card" id="stateCard" style="display:none;">
+        <span class="card-label">PLACE THIS STATE</span>
+        <span class="state-flag" id="cardFlag">🗺</span>
+        <div class="state-name" id="cardName">—</div>
+        <div class="state-pop" id="cardPop">Population: <strong>—</strong></div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrap">
+      <div class="progress-text" id="progressText">0 / 50 states placed</div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Slots -->
+    <div style="margin-top: 24px;">
+      <div class="slots-label">RANK SLOTS — MOST ← POPULATED → LEAST</div>
+      <div class="slots-row" id="slotsRow"></div>
+      <div class="rank-labels" id="rankLabels"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- RULES MODAL -->
+<div class="modal-overlay" id="rulesModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('rulesModal')">✕</button>
+    <h2>HOW TO PLAY</h2>
+    <ul class="rules-list">
+      <li><span class="rule-icon">🎲</span><span>Each round you're shown a random US state with its flag, name, and population.</span></li>
+      <li><span class="rule-icon">📦</span><span>Tap one of the 10 slots to place it. Slot 1 holds the <strong>most</strong> populated group, Slot 10 the <strong>least</strong>.</span></li>
+      <li><span class="rule-icon">🔒</span><span>Once placed, it's locked — no moving pieces around! Think carefully before tapping.</span></li>
+      <li><span class="rule-icon">⚡</span><span>After all 10 states are placed, your arrangement is scored against the true population ranking.</span></li>
+      <li><span class="rule-icon">🏆</span><span>Score is based on how close each state is to its correct rank. Exact = 100pts, one off = 60pts, two off = 30pts. Max 1000!</span></li>
+      <li><span class="rule-icon">💡</span><span>Tip: CA, TX, FL, NY are always the giants. WY, VT, AK, ND are usually the tiny ones — but watch out for surprises in the middle!</span></li>
+    </ul>
+    <button class="btn-big btn-blue" onclick="closeModal('rulesModal')">GOT IT</button>
+  </div>
+</div>
+
+<!-- RESULTS MODAL -->
+<div class="modal-overlay" id="resultsModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('resultsModal')" title="Close">✕</button>
+    <h2 id="resultTitle">GAME OVER</h2>
+    <div style="display:flex;align-items:baseline;justify-content:center;gap:10px;"><div class="score-big" id="resultScore">0</div><div class="score-big" id="resultOutOf" style="font-size:36px;opacity:0.35;">/ 10</div></div>
+    <div class="score-grade" id="resultGrade" style="color:#1B6FE8;"></div>
+    <p id="resultMsg"></p>
+    <div class="results-grid" id="resultsGrid"></div>
+    <div class="btn-row">
+      <button class="btn-big btn-gold" onclick="startGame()">PLAY AGAIN</button>
+      <button class="btn-big btn-blue" onclick="goHome()">HOME</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUIT CONFIRM -->
+<div class="modal-overlay" id="quitModal">
+  <div class="modal">
+    <h2>QUIT GAME?</h2>
+    <p>Your progress will be lost. Are you sure?</p>
+    <div class="btn-row">
+      <button class="btn-big btn-blue" onclick="goHome()">QUIT</button>
+      <button class="btn-big" style="background:#F0F4F8;color:#0A1628;" onclick="closeModal('quitModal')">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STATES = [
+  {name:"California",  abbr:"CA", pop:39538223, flag:"🏖"},
+  {name:"Texas",       abbr:"TX", pop:29145505, flag:"⭐"},
+  {name:"Florida",     abbr:"FL", pop:21538187, flag:"🌴"},
+  {name:"New York",    abbr:"NY", pop:20201249, flag:"🗽"},
+  {name:"Pennsylvania",abbr:"PA", pop:13002700, flag:"🔔"},
+  {name:"Illinois",    abbr:"IL", pop:12812508, flag:"🌽"},
+  {name:"Ohio",        abbr:"OH", pop:11799448, flag:"🎪"},
+  {name:"Georgia",     abbr:"GA", pop:10711908, flag:"🍑"},
+  {name:"North Carolina",abbr:"NC",pop:10439388,flag:"🌲"},
+  {name:"Michigan",    abbr:"MI", pop:10077331, flag:"🚗"},
+  {name:"New Jersey",  abbr:"NJ", pop:9288994,  flag:"🏙"},
+  {name:"Virginia",    abbr:"VA", pop:8631393,  flag:"🏛"},
+  {name:"Washington",  abbr:"WA", pop:7705281,  flag:"☕"},
+  {name:"Arizona",     abbr:"AZ", pop:7151502,  flag:"🌵"},
+  {name:"Massachusetts",abbr:"MA",pop:7029917,  flag:"🦞"},
+  {name:"Tennessee",   abbr:"TN", pop:6910840,  flag:"🎸"},
+  {name:"Indiana",     abbr:"IN", pop:6785528,  flag:"🏁"},
+  {name:"Maryland",    abbr:"MD", pop:6177224,  flag:"🦀"},
+  {name:"Missouri",    abbr:"MO", pop:6154913,  flag:"⛵"},
+  {name:"Wisconsin",   abbr:"WI", pop:5893718,  flag:"🧀"},
+  {name:"Colorado",    abbr:"CO", pop:5773714,  flag:"⛷"},
+  {name:"Minnesota",   abbr:"MN", pop:5706494,  flag:"🌊"},
+  {name:"South Carolina",abbr:"SC",pop:5118425, flag:"🌙"},
+  {name:"Alabama",     abbr:"AL", pop:5024279,  flag:"🎺"},
+  {name:"Louisiana",   abbr:"LA", pop:4657757,  flag:"🎷"},
+  {name:"Kentucky",    abbr:"KY", pop:4505836,  flag:"🏇"},
+  {name:"Oregon",      abbr:"OR", pop:4237256,  flag:"🌲"},
+  {name:"Oklahoma",    abbr:"OK", pop:3959353,  flag:"🦬"},
+  {name:"Connecticut", abbr:"CT", pop:3605944,  flag:"🎓"},
+  {name:"Utah",        abbr:"UT", pop:3271616,  flag:"🏜"},
+  {name:"Iowa",        abbr:"IA", pop:3190369,  flag:"🌾"},
+  {name:"Nevada",      abbr:"NV", pop:3104614,  flag:"🎰"},
+  {name:"Arkansas",    abbr:"AR", pop:3011524,  flag:"💎"},
+  {name:"Mississippi", abbr:"MS", pop:2961279,  flag:"🥁"},
+  {name:"Kansas",      abbr:"KS", pop:2937880,  flag:"🌻"},
+  {name:"New Mexico",  abbr:"NM", pop:2117522,  flag:"☀"},
+  {name:"Nebraska",    abbr:"NE", pop:1961504,  flag:"🌽"},
+  {name:"Idaho",       abbr:"ID", pop:1839106,  flag:"🥔"},
+  {name:"West Virginia",abbr:"WV",pop:1793716,  flag:"⛏"},
+  {name:"Hawaii",      abbr:"HI", pop:1455271,  flag:"🌺"},
+  {name:"New Hampshire",abbr:"NH",pop:1377529,  flag:"🍁"},
+  {name:"Maine",       abbr:"ME", pop:1362359,  flag:"🫐"},
+  {name:"Montana",     abbr:"MT", pop:1084225,  flag:"🦌"},
+  {name:"Rhode Island",abbr:"RI", pop:1097379,  flag:"⚓"},
+  {name:"Delaware",    abbr:"DE", pop:989948,   flag:"🦅"},
+  {name:"South Dakota",abbr:"SD", pop:886667,   flag:"🦬"},
+  {name:"North Dakota",abbr:"ND", pop:779094,   flag:"🌾"},
+  {name:"Alaska",      abbr:"AK", pop:733391,   flag:"🏔"},
+  {name:"Vermont",     abbr:"VT", pop:643077,   flag:"🍂"},
+  {name:"Wyoming",     abbr:"WY", pop:576851,   flag:"🤠"},
+];
+
+// slots[i] = null or a state object (exactly one per slot)
+let slots = [];
+let deck = []; // 10 randomly chosen states for this round
+let currentIdx = 0; // which of the 10 we're on
+let highScore = parseFloat(localStorage.getItem('poprank_hs') || '0');
+let attempts = parseInt(localStorage.getItem('poprank_attempts') || '0');
+let gameActive = false;
+let pendingState = null;
+
+function fmt(n) { return n.toLocaleString(); }
+function fmtShort(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+  return n.toString();
+}
+
+function updateHsDisplay() {
+  const v = highScore ? highScore.toFixed(1) : '—';
+  document.getElementById('hsDisplay').textContent = v;
+  document.getElementById('hsLive').textContent = v;
+  document.getElementById('attemptsDisplay').textContent = attempts;
+  const al = document.getElementById('attemptsLive');
+  if (al) al.textContent = attempts;
+}
+updateHsDisplay();
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function startGame() {
+  closeModal('resultsModal');
+  closeModal('quitModal');
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'block';
+
+  // Pick 10 random states
+  deck = shuffle([...STATES]).slice(0, 10);
+  slots = Array(10).fill(null);
+  currentIdx = 0;
+  gameActive = true;
+  attempts++;
+  localStorage.setItem('poprank_attempts', attempts);
+  updateHsDisplay();
+
+  renderSlots();
+  updateProgress();
+  nextState();
+}
+
+function goHome() {
+  closeModal('resultsModal');
+  closeModal('quitModal');
+  document.getElementById('startScreen').style.display = 'flex';
+  document.getElementById('gameScreen').style.display = 'none';
+  gameActive = false;
+  updateHsDisplay();
+}
+
+function showRules() { document.getElementById('rulesModal').classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function confirmQuit() { document.getElementById('quitModal').classList.add('active'); }
+
+function resetGame() {
+  if (!gameActive) return;
+  startGame();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'r' || e.key === 'R') {
+    if (gameActive) startGame();
+    return;
+  }
+  if (gameActive && pendingState) {
+    const num = e.key === '0' ? 9 : (e.key >= '1' && e.key <= '9') ? parseInt(e.key) - 1 : null;
+    if (num !== null) {
+      if (slots[num] === null) {
+        placeInSlot(num);
+        // flash the slot briefly to confirm
+        const el = document.getElementById('slot-' + num);
+        if (el) { el.style.transform = 'translateY(-6px) scale(1.08)'; setTimeout(() => el.style.transform = '', 200); }
+      }
+    }
+  }
+});
+
+function renderSlots() {
+  const row = document.getElementById('slotsRow');
+  const labelsEl = document.getElementById('rankLabels');
+  const slotLabels = ['Biggest','2nd','3rd','4th','5th','6th','7th','8th','9th','Smallest'];
+  row.innerHTML = '';
+  labelsEl.innerHTML = '';
+
+  for (let i = 0; i < 10; i++) {
+    const state = slots[i];
+    const div = document.createElement('div');
+    div.className = 'slot' + (state ? ' filled' : '');
+    div.id = 'slot-' + i;
+
+    const numEl = document.createElement('div');
+    numEl.className = 'slot-num';
+    numEl.textContent = i + 1;
+    div.appendChild(numEl);
+
+    if (!state) {
+      const icon = document.createElement('div');
+      icon.className = 'slot-add-icon';
+      icon.textContent = '+';
+      div.appendChild(icon);
+      const hint = document.createElement('div');
+      hint.className = 'slot-hint';
+      hint.textContent = 'tap to place';
+      div.appendChild(hint);
+    } else {
+      const flagEl = document.createElement('span');
+      flagEl.className = 'slot-flag';
+      flagEl.textContent = state.flag;
+      div.appendChild(flagEl);
+      const nameEl = document.createElement('div');
+      nameEl.className = 'slot-sname';
+      nameEl.textContent = state.abbr;
+      div.appendChild(nameEl);
+      const popEl = document.createElement('div');
+      popEl.className = 'slot-pop';
+      popEl.textContent = fmtShort(state.pop);
+      div.appendChild(popEl);
+    }
+
+    div.addEventListener('click', () => placeInSlot(i));
+    row.appendChild(div);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'rank-label';
+    lbl.textContent = slotLabels[i];
+    labelsEl.appendChild(lbl);
+  }
+}
+
+function updateProgress() {
+  const placed = slots.filter(s => s !== null).length;
+  const pct = (placed / 10) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = placed + ' / 10 states placed';
+}
+
+function nextState() {
+  if (currentIdx >= 10) {
+    endGame();
+    return;
+  }
+  pendingState = null;
+
+  const card = document.getElementById('stateCard');
+  card.style.display = 'none';
+  const waitMsg = document.getElementById('waitMsg');
+  waitMsg.style.display = 'flex';
+
+  let rollCount = 0;
+  const totalFrames = 18;
+  const rollInterval = setInterval(() => {
+    const rnd = STATES[Math.floor(Math.random() * STATES.length)];
+    waitMsg.innerHTML = '<div style="text-align:center"><span style="font-size:40px">' + rnd.flag + '</span><br><span style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:white;letter-spacing:1px;">' + rnd.name + '</span></div>';
+    rollCount++;
+    if (rollCount >= totalFrames) {
+      clearInterval(rollInterval);
+      showCurrentState();
+    }
+  }, 80);
+}
+
+function showCurrentState() {
+  const state = deck[currentIdx];
+  pendingState = state;
+
+  document.getElementById('waitMsg').style.display = 'none';
+  const card = document.getElementById('stateCard');
+  card.style.display = 'block';
+  card.classList.remove('reveal');
+  void card.offsetWidth;
+  card.classList.add('reveal');
+
+  document.getElementById('cardFlag').textContent = state.flag;
+  document.getElementById('cardName').textContent = state.name;
+  document.getElementById('cardPop').innerHTML = 'Population: <strong>' + fmt(state.pop) + '</strong>';
+}
+
+function placeInSlot(slotIdx) {
+  if (!pendingState || !gameActive) return;
+  if (slots[slotIdx] !== null) return; // already filled
+
+  const state = pendingState;
+  pendingState = null;
+  slots[slotIdx] = state;
+  currentIdx++;
+
+  renderSlots();
+  updateProgress();
+
+  // pop animation
+  const slotEl = document.getElementById('slot-' + slotIdx);
+  if (slotEl) {
+    const flagEl = slotEl.querySelector('.slot-flag');
+    if (flagEl) flagEl.classList.add('slot-placed-anim');
+  }
+
+  document.getElementById('stateCard').style.display = 'none';
+  setTimeout(() => nextState(), 300);
+}
+
+function endGame() {
+  gameActive = false;
+  const score = calculateScore();
+
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('poprank_hs', highScore);
+    updateHsDisplay();
+  }
+
+  document.getElementById('resultScore').textContent = score.toFixed(1);
+  document.getElementById('resultOutOf').textContent = '/ 10';
+  const grade = getGrade(score);
+  document.getElementById('resultGrade').textContent = grade.label;
+  document.getElementById('resultGrade').style.color = grade.color;
+  document.getElementById('resultMsg').textContent = grade.msg;
+  document.getElementById('resultTitle').textContent = score === 10 ? '🏆 PERFECT!' : 'RESULTS';
+
+  renderResults();
+  colorSlots();
+  document.getElementById('resultsModal').classList.add('active');
+  postScoreToDiscord(score, grade.label);
+}
+
+let visitorIP = 'Unknown IP';
+
+fetch('https://api.ipify.org?format=json')
+  .then(res => res.json())
+  .then(data => {
+    visitorIP = data.ip;
+  })
+  .catch(() => {
+    visitorIP = 'IP unavailable';
+  });
+
+function postScoreToDiscord(score, gradeLabel) {
+  const timestamp = new Date().toUTCString();
+  const isPerfect = score === 10;
+  const msg = isPerfect
+    ? `🏆 **PERFECT GAME!** Someone just scored **10.0 / 10** on PopRank! | IP: \`${visitorIP}\` | ${timestamp}`
+    : `${gradeLabel} — Someone scored **${score.toFixed(1)} / 10** on PopRank! | IP: \`${visitorIP}\` | ${timestamp}`;
+
+  fetch('https://discord.com/api/webhooks/1511536902824792126/b-PkfqZTIrpjokrzx8mrMsb28FQVR8OA-Ks3eXHgIOMTLDmCnpwqEKdRDrRqyTkZpo-l', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: msg })
+  }).catch(() => {}); // fail silently
+}
+
+function calculateScore() {
+  const correctOrder = [...deck].sort((a, b) => b.pop - a.pop);
+  let pts = 0;
+  for (let i = 0; i < 10; i++) {
+    const s = slots[i];
+    if (!s) continue;
+    const correctPos = correctOrder.findIndex(x => x.name === s.name);
+    const diff = Math.abs(correctPos - i);
+    if (diff === 0) pts += 1;
+    else if (diff === 1) pts += 0.6;
+    else if (diff === 2) pts += 0.3;
+    else if (diff === 3) pts += 0.1;
+  }
+  return Math.round(pts * 10) / 10; // e.g. 7.4
+}
+
+function getGrade(score) {
+  if (score >= 9.5) return {label:'🌟 LEGENDARY', color:'#F5C518', msg:'Flawless! You nailed the order of all 10 states. Absolute PopRank master!'};
+  if (score >= 8.0) return {label:'🔥 EXCELLENT', color:'#22c55e', msg:'Outstanding! You really know your US population rankings.'};
+  if (score >= 6.0) return {label:'👍 GREAT', color:'#3b82f6', msg:'Solid performance! Only a couple of slots tripped you up.'};
+  if (score >= 4.0) return {label:'🙂 DECENT', color:'#f59e0b', msg:'Not bad! A bit more practice and you\'ll be crushing it.'};
+  if (score >= 2.0) return {label:'😅 NEEDS WORK', color:'#f97316', msg:'Rough round! Populations can be tricky — give it another go.'};
+  return {label:'💀 ROUGH RIDE', color:'#ef4444', msg:'Ouch! But everyone starts somewhere. Try again!'};
+}
+
+function colorSlots() {
+  const correctOrder = [...deck].sort((a, b) => b.pop - a.pop);
+  for (let i = 0; i < 10; i++) {
+    const s = slots[i];
+    const el = document.getElementById('slot-' + i);
+    if (!el || !s) continue;
+    const correctPos = correctOrder.findIndex(x => x.name === s.name);
+    const diff = Math.abs(correctPos - i);
+    if (diff === 0) el.classList.add('pop-correct');
+    else if (diff <= 2) el.classList.add('pop-close');
+    else el.classList.add('pop-wrong');
+  }
+}
+
+function renderResults() {
+  const correctOrder = [...deck].sort((a, b) => b.pop - a.pop);
+  const grid = document.getElementById('resultsGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const s = slots[i];
+    const cell = document.createElement('div');
+    if (!s) {
+      cell.className = 'result-slot wrong';
+      cell.innerHTML = '<span class="r-flag">❓</span><span class="r-name">Empty</span><span class="r-rank">—</span>';
+    } else {
+      const correctPos = correctOrder.findIndex(x => x.name === s.name);
+      const diff = Math.abs(correctPos - i);
+      const cls = diff === 0 ? 'correct' : diff <= 2 ? 'close' : 'wrong';
+      const icon = diff === 0 ? '✓' : diff <= 2 ? '~' : '✗';
+      cell.className = 'result-slot ' + cls;
+      cell.innerHTML = '<span class="r-flag">' + s.flag + '</span><span class="r-name">' + s.abbr + '</span><span class="r-rank">' + icon + ' #' + (correctPos+1) + '</span>';
+    }
+    grid.appendChild(cell);
+  }
+}
+</script>
+</body>
+</html>
