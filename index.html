@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1"
+    />
+    <meta name="theme-color" content="#000000" />
+    <title>Tayshuwn Ricketts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="/assets/index-DMan8a3P.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CmsZ9hGV.css">
+  </head>
+  <body>
+    <div class="desk">
+      <div class="terminal-window" id="terminal">
+        <div class="neon-flash" id="neon-flash" aria-hidden="true"></div>
+
+        <div class="titlebar">
+          <div class="titlebar-left">
+            <span class="tb-icon" aria-hidden="true">◫</span>
+            <span class="tb-title">Windows PowerShell</span>
+          </div>
+          <div class="titlebar-btns" aria-hidden="true">
+            <span class="tb-btn">─</span>
+            <span class="tb-btn">□</span>
+            <span class="tb-btn">×</span>
+          </div>
+        </div>
+
+        <div class="tabbar">
+          <span class="tab active" id="tab-label">tayshuwn@portfolio</span>
+          <span class="tab dim">+</span>
+        </div>
+
+        <div class="cmd-echo-bar" id="cmd-echo" hidden>
+          <span class="prompt">PS C:\Users\tayshuwn&gt;</span>
+          <span class="cmd-text" id="cmd-text">home</span>
+        </div>
+
+        <div class="terminal-viewport">
+          <!-- BOOT -->
+          <section class="screen screen-active" id="screen-boot" data-screen="boot">
+            <div class="screen-inner boot">
+              <p class="line strong">Windows PowerShell</p>
+              <p class="line dim">Copyright (C) Tayshuwn Ricketts Portfolio.</p>
+              <p class="line dim">Hey, I'm tayshuwn! — ECE in the making.</p>
+              <p class="line dim">brampton · still in high school.</p>
+              <button class="cmd-link enter-btn" data-go="home" data-cmd="enter">
+                <span class="prompt-inline">PS&gt;</span> enter
+              </button>
+            </div>
+          </section>
+
+          <!-- HOME -->
+          <section class="screen" id="screen-home" data-screen="home">
+            <div class="screen-inner">
+              <p class="line dim">currently: grade 11 · brampton/gta, canada</p>
+              <h1 class="line strong hero">Hello, I'm Tayshuwn Ricketts</h1>
+              <p class="line">
+                Future electrical &amp; computer engineer. I think a lot about technology,
+                systems, the world — and I write it down here.
+              </p>
+              <div class="link-stack">
+                <a
+                  class="cmd-link external"
+                  href="https://linkedin.com/in/tayshuwn-ricketts"
+                  target="_blank"
+                  rel="noopener"
+                  >linkedin ↗</a
+                >
+                <a class="cmd-link external" href="mailto:tshuwnricketts22@gmail.com">email ↗</a>
+              </div>
+            </div>
+          </section>
+
+          <!-- NOTES LIST -->
+          <section class="screen" id="screen-notes" data-screen="notes">
+            <div class="screen-inner">
+              <p class="line strong">NOTES — 04 entries</p>
+              <p class="line divider">────────────────────────</p>
+              <div class="note-list" id="note-list"></div>
+            </div>
+          </section>
+
+          <!-- NOTE READ -->
+          <section class="screen" id="screen-note" data-screen="note">
+            <div class="screen-inner">
+              <p class="line strong" id="note-head"></p>
+              <p class="line dim" id="note-meta"></p>
+              <p class="line divider">────────────────────────</p>
+              <div class="note-body" id="note-body"></div>
+              <div class="pager" id="note-pager" hidden>
+                <button class="cmd-link small" id="note-prev" type="button">← prev</button>
+                <span class="pager-count" id="note-page-num"></span>
+                <button class="cmd-link small" id="note-next" type="button">next →</button>
+              </div>
+              <button class="cmd-link small back-note" data-go="notes" data-cmd="notes" type="button">
+                ← back to notes
+              </button>
+            </div>
+          </section>
+
+          <!-- ABOUT -->
+          <section class="screen" id="screen-about" data-screen="about">
+            <div class="screen-inner">
+              <p class="line strong">About Me</p>
+              <p class="line live-age" id="age"></p>
+              <p class="line dim">born dec 28, 2009 · live counter</p>
+            </div>
+          </section>
+
+          <!-- CONTACT -->
+          <section class="screen" id="screen-contact" data-screen="contact">
+            <div class="screen-inner">
+              <p class="line strong">Connect</p>
+              <p class="line">I'm always down to talk.</p>
+              <p class="line dim">engineering, ideas, anything.</p>
+              <div class="link-stack">
+                <a
+                  class="cmd-link external"
+                  href="https://linkedin.com/in/tayshuwn-ricketts"
+                  target="_blank"
+                  rel="noopener"
+                  >linkedin.com/in/tayshuwn-ricketts</a
+                >
+                <a class="cmd-link external" href="mailto:tshuwnricketts22@gmail.com"
+                  >tshuwnricketts22@gmail.com</a
+                >
+              </div>
+              <p class="line dim footer-line">© 2025 tayshuwn ricketts</p>
+            </div>
+          </section>
+        </div>
+
+        <nav class="cmd-bar" id="cmd-bar" hidden aria-label="Navigation">
+          <button class="cmd-btn" data-go="home" data-cmd="home" type="button">./home</button>
+          <button class="cmd-btn" data-go="notes" data-cmd="notes" type="button">./notes</button>
+          <button class="cmd-btn" data-go="about" data-cmd="about" type="button">./about</button>
+          <button class="cmd-btn" data-go="contact" data-cmd="contact" type="button">./connect</button>
+        </nav>
+      </div>
+
+      <p class="desk-hint">tap to navigate</p>
+    </div>
+
+  </body>
+</html>
