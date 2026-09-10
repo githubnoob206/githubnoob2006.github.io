@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admissions — Your University, Your Call</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=Fredoka:wght@400;500;600;700&display=swap');
+
+:root{
+  --ink:#251d2b; --paper:#fff8df; --cream:#fff2c3; --red:#e95b4b; --gold:#f7c948; --blue:#4a90d9; --green:#25d84f; --purple:#8067c7; --shadow:5px 6px 0 var(--ink);
+}
+*{box-sizing:border-box}
+body{margin:0;background:#d9ecff;color:var(--ink);font-family:'Fredoka',sans-serif;min-height:100vh;overflow-x:hidden}
+body:before,body:after{content:"";position:fixed;z-index:-2;pointer-events:none}
+body:before{inset:0;background:radial-gradient(circle at 12% 16%,#fff8 0 6%,transparent 6.5%),radial-gradient(circle at 82% 27%,#fff7 0 4%,transparent 4.5%),radial-gradient(circle at 53% 85%,#fff6 0 5%,transparent 5.5%),#bfe0f8}
+body:after{left:-10%;right:-10%;bottom:-80px;height:180px;background:#8fc97f;border-top:7px solid var(--ink);border-radius:50% 50% 0 0/30% 30% 0 0}
+button,input{font:inherit}
+.screen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:32px}.screen.active{display:flex}
+.panel{width:min(1120px,95vw);background:var(--paper);border:6px solid var(--ink);border-radius:28px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.panel:before{content:"";position:absolute;inset:0;background-image:radial-gradient(#251d2b22 1.2px,transparent 1.2px);background-size:14px 14px;pointer-events:none;opacity:.35}
+.inner{position:relative;padding:38px}
+.logo{font-family:'Bowlby One SC',sans-serif;letter-spacing:1px;font-size:clamp(34px,6vw,70px);line-height:.95;text-transform:uppercase;text-shadow:4px 4px 0 var(--gold);transform:rotate(-2deg)}
+.subtitle{font-size:20px;margin:16px 0 26px;max-width:720px;font-weight:600}
+.tape{position:absolute;width:150px;height:42px;background:#f4db77aa;top:20px;right:-35px;transform:rotate(18deg);border:2px dashed #8b6d1c55}
+.field{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}.field input{flex:1;min-width:260px;border:5px solid var(--ink);border-radius:15px;padding:14px 16px;background:#fff;outline:none;box-shadow:inset 0 -4px #00000012}.field input:focus{transform:translateY(-1px)}
+.btn{border:5px solid var(--ink);border-radius:15px;background:var(--gold);padding:12px 18px;font-weight:800;cursor:pointer;box-shadow:4px 4px 0 var(--ink);transition:.12s;user-select:none}.btn:hover{transform:translate(-1px,-2px);box-shadow:6px 6px 0 var(--ink)}.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.btn.green{background:#18e849;color:#062b0d;text-shadow:0 1px #fff8}.btn.blue{background:#ff9d00;color:#3a1d00;text-shadow:0 1px #fff4}.btn.red{background:#ff3131;color:#3a1d00;text-shadow:1px 1px #8a0000}.btn:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shadow:2px 2px 0 var(--ink)!important}.btn.purple{background:#b89eea}
+.doodle-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:32px}.doodle{background:#fff;border:4px solid var(--ink);border-radius:18px;padding:13px 16px;box-shadow:4px 4px 0 var(--ink);font-weight:700;transform:rotate(var(--r));}
+.doodle:nth-child(1){--r:-3deg}.doodle:nth-child(2){--r:2deg}.doodle:nth-child(3){--r:-1deg}
+
+#game{align-items:flex-start;padding-top:18px}.game-shell{width:min(1320px,96vw)}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:14px}.school-title{font-family:'Bowlby One SC';font-size:clamp(28px,4vw,48px);text-shadow:3px 3px #fff;line-height:1}.round{background:#fff;border:5px solid var(--ink);border-radius:18px;padding:10px 15px;box-shadow:4px 4px 0 var(--ink);font-weight:800}
+.canvas{background:var(--paper);border:6px solid var(--ink);border-radius:24px;box-shadow:var(--shadow);overflow:hidden;position:relative}.desk{padding:18px 18px 24px;background:linear-gradient(#f7e7bb 0 54%,#d99f67 54% 100%);min-height:calc(100vh - 120px)}
+.notice{background:#fff7b6;border:4px solid var(--ink);padding:10px 15px;border-radius:15px;display:inline-block;box-shadow:3px 3px 0 var(--ink);font-weight:700;margin-bottom:15px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}.app{background:#fffdf1;border:5px solid var(--ink);border-radius:20px;box-shadow:5px 6px 0 var(--ink);padding:17px;position:relative;display:flex;flex-direction:column;min-width:0;transition:.18s}.app:hover{transform:translateY(-3px) rotate(-.3deg)}
+.app.best{animation:wiggle 1.7s infinite ease-in-out}.app h2{font-size:24px;margin:0 0 4px}.tagline{font-weight:700;color:#654e67;font-size:14px;margin-bottom:13px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}.stat{background:#edf5ff;border:3px solid var(--ink);border-radius:11px;padding:7px 7px;min-width:0}.stat b{display:block;font-size:17px}.stat span{font-size:10px;font-weight:700;text-transform:uppercase;opacity:.7;letter-spacing:.2px}.section-title{font-size:12px;text-transform:uppercase;font-weight:900;letter-spacing:.7px;margin-top:9px}.activities{margin:6px 0 0;padding-left:17px;font-size:13px;line-height:1.38}.activities li{margin-bottom:2px}.essay{margin-top:8px;padding:9px 10px;background:#fff3d7;border:3px dashed var(--ink);border-radius:10px;font-size:12px;line-height:1.3}.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:auto;padding-top:16px}.actions button{padding:9px 6px;font-size:12px;border-width:4px;box-shadow:3px 3px 0 var(--ink)}
+.decision-face{display:none}.decision-face .avatar{width:110px;height:110px;margin:0 auto 16px;border-width:5px;box-shadow:5px 5px 0 #0003}.decision-face .hair{height:46px}.decision-face .eye{top:49px;width:10px;height:13px}.decision-face .eye.l{left:29px}.decision-face .eye.r{right:29px}.decision-face .smile{left:38px;top:69px;width:30px;height:16px;border-bottom-width:4px}.decision-face .decision-name{font-family:'Bowlby One SC';font-size:30px;line-height:1.05;text-align:center;text-shadow:2px 2px 0 #0003}.app.chosen{padding:20px}.app.chosen > .decision-content{display:none}.app.chosen > .decision-face{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:365px}.app[data-decision='accept']{background:#21ed63;color:#062d0f;border-color:#062d0f;outline:8px solid #19d957;box-shadow:8px 9px 0 #062d0f;transform:none}.app[data-decision='wait']{background:#ff9f1c;color:#3b2100;border-color:#3b2100;outline:8px solid #ff8600;box-shadow:8px 9px 0 #3b2100;transform:none}.app[data-decision='reject']{background:#ff3b30;color:#4b0000;border-color:#4b0000;outline:8px solid #f52217;box-shadow:8px 9px 0 #4b0000;transform:none}.app.chosen .paperclip,.app.chosen .stamp{display:none}.app.chosen .decision-face .avatar{border-color:currentColor}.app.chosen .decision-face .hair,.app.chosen .decision-face .eye{background:var(--ink)}
+.avatar{width:62px;height:62px;border:4px solid var(--ink);border-radius:50%;background:var(--avatar,#ffd3ae);position:relative;margin-bottom:8px;overflow:hidden;box-shadow:3px 3px 0 #0002}.hair{position:absolute;left:4px;right:4px;top:-1px;height:26px;background:var(--hair,#3a2b25);border-radius:50% 50% 40% 40%}.eye{position:absolute;top:27px;width:7px;height:9px;background:var(--ink);border-radius:50%}.eye.l{left:16px}.eye.r{right:16px}.smile{position:absolute;left:22px;top:39px;width:18px;height:10px;border-bottom:3px solid var(--ink);border-radius:0 0 20px 20px}.paperclip{position:absolute;right:9px;top:-3px;font-size:25px;transform:rotate(15deg)}
+.stamp{position:absolute;right:11px;top:10px;border:4px solid var(--stamp,#2b7540);color:var(--stamp,#2b7540);padding:4px 7px;border-radius:9px;font-family:'Bowlby One SC';font-size:11px;transform:rotate(10deg);display:none}
+@keyframes wiggle{0%,100%{transform:rotate(0)}50%{transform:rotate(.6deg)}}
+
+#waitlist{align-items:flex-start;padding:22px}.wait-panel{width:min(1050px,95vw)}.wait-head{display:flex;align-items:end;justify-content:space-between;gap:20px}.wait-head h1,.final h1{font-family:'Bowlby One SC';font-size:50px;margin:0;text-shadow:3px 3px var(--gold)}.wait-list{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:24px 0}.wait-card{background:#fff;border:5px solid var(--ink);border-radius:18px;padding:15px;box-shadow:4px 4px 0 var(--ink);display:flex;gap:14px;align-items:center}.wait-card .mini{flex:1}.wait-card h3{margin:0 0 3px;font-size:21px}.wait-card p{margin:3px 0;font-size:13px}.wait-card button{white-space:nowrap}.empty{padding:35px;text-align:center;font-weight:800;font-size:20px}
+.final{width:min(1050px,95vw)}.final-title{text-align:center}.accepted{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:25px 0}.accepted-card{background:#fff;border:5px solid var(--ink);border-radius:18px;padding:14px;box-shadow:4px 4px 0 var(--ink);display:flex;gap:14px;align-items:center}.accepted-card .avatar{width:82px;height:82px;flex:0 0 82px;margin-bottom:0}.accepted-card .hair{left:4px;right:4px;top:-1px;height:31px}.accepted-card .eye{top:36px;width:8px;height:10px}.accepted-card .eye.l{left:21px}.accepted-card .eye.r{right:21px}.accepted-card .smile{left:29px;top:51px;width:24px;height:12px}.ribbon{background:var(--red);color:#fff;border:4px solid var(--ink);display:inline-block;padding:6px 12px;font-weight:900;border-radius:12px;transform:rotate(-2deg);box-shadow:3px 3px 0 var(--ink)}
+.footer-note{text-align:center;font-weight:700;font-size:13px;opacity:.72;margin-top:14px}
+
+@media(max-width:900px){.cards{grid-template-columns:1fr}.desk{min-height:auto}.accepted,.wait-list{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}.panel .inner{padding:26px}}
+</style>
+</head>
+<body>
+<section id="start" class="screen active">
+  <div class="panel"><div class="inner">
+    <div class="tape"></div>
+    <div class="logo">TUFF ADMISSIONS GAME</div>
+    <div class="subtitle">You’re the Dean. You’re opening a brand-new Ivy League university, and the applications are already flooding in. Every applicant is genuinely impressive. Good luck choosing.</div>
+    <div class="field"><input id="schoolInput" maxlength="42" placeholder="Name your new university…" value="Escamilla University"><button id="startBtn" class="btn">Open the mailroom →</button></div>
+    <div class="doodle-row"><div class="doodle">✦ Ivy League energy</div><div class="doodle">✎ 30 total applicants</div><div class="doodle">☕ Absolutely no easy choices</div></div>
+  </div></div>
+</section>
+
+<section id="game" class="screen">
+  <div class="game-shell">
+    <div class="topbar"><div class="school-title" id="schoolTitle"></div><div class="round" id="roundLabel"></div></div>
+    <div class="canvas"><div class="desk">
+      <div class="notice" id="notice">Three envelopes. One accepted. One waitlisted. One rejected.</div>
+      <div id="cards" class="cards"></div>
+    </div></div>
+    <div class="footer-note">All applicants are fictional. Sandbox mode: no score, no “correct” answer. Build the class you want.</div>
+  </div>
+</section>
+
+<section id="waitlist" class="screen">
+  <div class="panel wait-panel"><div class="inner">
+    <div class="wait-head"><div><div class="ribbon">FINAL COMMITTEE</div><h1>One last call…</h1><p>Everyone below survived the waitlist. Choose exactly <b>one</b> to join your inaugural class.</p></div><div class="round">10 / 10 rounds complete</div></div>
+    <div id="waitList" class="wait-list"></div>
+  </div></div>
+</section>
+
+<section id="final" class="screen">
+  <div class="panel final"><div class="inner">
+    <div class="final-title"><div class="ribbon">WELCOME TO YOUR CLASS</div><h1 id="finalSchool"></h1><p id="finalSummary"></p></div>
+    <div id="accepted" class="accepted"></div>
+    <div style="text-align:center"><button id="againBtn" class="btn">Start another admissions cycle ↻</button></div>
+    <div class="footer-note">TY FOR PLAYING!!</div>
+  </div></div>
+</section>
+
+<script>
+const applicants = [
+ {name:'Amara Bennett',city:'Atlanta, GA',sat:'1560',gpa:'3.98',rigor:'15 AP / advanced courses',act:'Robotics captain · founded Girls Who Code chapter · hospital volunteer · violinist',essay:'Wrote about rebuilding a broken robot with her grandmother and learning to design for real people.',avatar:'#c98a63',hair:'#211914'},
+ {name:'Ethan Park',city:'Seattle, WA',sat:'1580',gpa:'3.96',rigor:'14 AP / advanced courses',act:'US math finalist · research assistant · debate president · Korean heritage newspaper',essay:'A funny, thoughtful essay about why his favorite engineering tool is the humble spreadsheet.',avatar:'#f1bf92',hair:'#222'},
+ {name:'Sofia Alvarez',city:'San Diego, CA',sat:'1540',gpa:'4.00',rigor:'13 AP / advanced courses',act:'National debate finalist · community clinic translator · varsity soccer · podcast host',essay:'Told a warm story about translating for neighbors and finding dignity in small acts of service.',avatar:'#c9825b',hair:'#251a17'},
+ {name:'Noah Williams',city:'Chicago, IL',sat:'1570',gpa:'3.95',rigor:'16 AP / advanced courses',act:'Science fair grand prize · jazz saxophonist · tutoring nonprofit · student government',essay:'Connected improvisational jazz to scientific discovery without making either one sound boring.',avatar:'#8c593b',hair:'#15110f'},
+ {name:'Tayshuwn Ricketts',city:'Brampton, ON',sat:'1600',gpa:'4.00',rigor:'16 AP / advanced courses',act:'Talks to gabby everyday · Likes to build stuff · Best friends with gabby · Pretty funny',essay:'Why i love gabby',avatar:'#8c593b',hair:'#15110f'},
+ {name:'Priya Shah',city:'Edison, NJ',sat:'1550',gpa:'3.99',rigor:'15 AP / advanced courses',act:'Biomedical research intern · orchestra concertmaster · food pantry organizer · coding mentor',essay:'Reflected on how a tiny sensor prototype changed the way she thought about accessibility.',avatar:'#b87850',hair:'#251912'},
+ {name:'Lucas Moretti',city:'Boston, MA',sat:'1590',gpa:'3.93',rigor:'14 AP / advanced courses',act:'Entrepreneurship finalist · newspaper editor · model UN · marathon fundraiser',essay:'A sharp narrative about turning a failed student newspaper subscription drive into a neighborhood campaign.',avatar:'#d9a376',hair:'#4b2f20'},
+ {name:'Maya Thompson',city:'Washington, DC',sat:'1530',gpa:'4.00',rigor:'14 AP / advanced courses',act:'Youth city council · national history award · theater lead · museum volunteer',essay:'Explored how old photographs can make a city feel simultaneously tiny and enormous.',avatar:'#7d4b35',hair:'#17100e'},
+ {name:'Daniel Kim',city:'Irvine, CA',sat:'1570',gpa:'3.97',rigor:'16 AP / advanced courses',act:'Cybersecurity competition winner · piano · peer counselor · STEM outreach',essay:'Described debugging a security lab and realizing that trust is really a human interface.',avatar:'#e0a97c',hair:'#251c18'},
+ {name:'Zoe Carter',city:'Austin, TX',sat:'1540',gpa:'3.96',rigor:'13 AP / advanced courses',act:'Climate research · state swim finalist · art magazine founder · composting initiative',essay:'Made a surprisingly funny case for why campus dining should care about food scraps.',avatar:'#d99467',hair:'#a86937'},
+ {name:'Andre Johnson',city:'Philadelphia, PA',sat:'1560',gpa:'3.99',rigor:'15 AP / advanced courses',act:'Physics Olympiad qualifier · marching band drum major · tutoring · makerspace volunteer',essay:'Wrote about the rhythm of a marching band and the rhythm of a physics problem.',avatar:'#7b4931',hair:'#171313'},
+ {name:'Lena Fischer',city:'Minneapolis, MN',sat:'1550',gpa:'3.95',rigor:'15 AP / advanced courses',act:'German exchange leader · economics journal · cross-country · community garden founder',essay:'Compared community gardens to miniature economies where everyone contributes something different.',avatar:'#d7a17b',hair:'#7b4f2b'},
+ {name:'Owen Reed',city:'Portland, OR',sat:'1590',gpa:'3.91',rigor:'16 AP / advanced courses',act:'Computer science research · chess captain · documentary filmmaker · food bank volunteer',essay:'A clever mini-documentary-style essay about observing what happens before a cafeteria opens.',avatar:'#e8b184',hair:'#3a261b'},
+ {name:'Nia Brooks',city:'Charlotte, NC',sat:'1520',gpa:'4.00',rigor:'13 AP / advanced courses',act:'Debate semifinalist · student newspaper · youth nonprofit board · ballet',essay:'Described changing her mind during a debate and why that felt more impressive than winning.',avatar:'#8b543a',hair:'#14100e'},
+ {name:'Arjun Mehta',city:'San Jose, CA',sat:'1580',gpa:'3.94',rigor:'16 AP / advanced courses',act:'AI research · engineering club president · tabla performer · math tutor',essay:'Explained his AI project through an unexpectedly charming story about learning rhythm from his grandfather.',avatar:'#ad6c49',hair:'#1b1512'},
+ {name:'Claire Martin',city:'New York, NY',sat:'1560',gpa:'3.97',rigor:'15 AP / advanced courses',act:'Classical pianist · philosophy essay finalist · youth shelter volunteer · fencing',essay:'Asked whether a “useful” life and a “beautiful” life have to be different things.',avatar:'#e4b38d',hair:'#8c5735'},
+ {name:'Malcolm Brown',city:'Houston, TX',sat:'1570',gpa:'3.96',rigor:'14 AP / advanced courses',act:'Space science team · football captain · mentorship program · photography',essay:'Used a night-sky photograph to talk about ambition, distance, and learning to zoom out.',avatar:'#875033',hair:'#14110e'},
+ {name:'Yuki Tanaka',city:'Honolulu, HI',sat:'1530',gpa:'3.98',rigor:'14 AP / advanced courses',act:'Marine biology lab · surf instructor · orchestra · reef restoration volunteer',essay:'A vivid, quiet essay about counting fish on a reef and understanding that data can be an act of care.',avatar:'#dca57e',hair:'#1d1716'},
+ {name:'Elijah Cooper',city:'Denver, CO',sat:'1550',gpa:'3.93',rigor:'15 AP / advanced courses',act:'Debate captain · wilderness first aid · school podcast · peer tutoring',essay:'Told the story of a disastrous school camping trip that became his favorite leadership lesson.',avatar:'#8d583b',hair:'#19130f'},
+ {name:'Samantha Lee',city:'Boston, MA',sat:'1590',gpa:'3.99',rigor:'16 AP / advanced courses',act:'National chemistry finalist · biotech internship · violin · disability advocacy club',essay:'Connected careful lab work with listening carefully to people whose needs are easy to miss.',avatar:'#dda57e',hair:'#33231a'},
+ {name:'Mateo Rivera',city:'Miami, FL',sat:'1540',gpa:'3.97',rigor:'13 AP / advanced courses',act:'Civic leadership fellow · baseball · bilingual literacy tutor · film club',essay:'Wrote about switching between languages and discovering that each one changed his sense of humor.',avatar:'#a86948',hair:'#17110e'},
+ {name:'Aaliyah Grant',city:'Baltimore, MD',sat:'1560',gpa:'4.00',rigor:'15 AP / advanced courses',act:'Biomedical volunteer · choir soloist · community garden organizer · coding tutor',essay:'Described a coding lesson with a younger student as a duet instead of a lecture.',avatar:'#74462f',hair:'#15110e'},
+ {name:'Henry Cho',city:'Dallas, TX',sat:'1580',gpa:'3.92',rigor:'15 AP / advanced courses',act:'Economics competition winner · jazz piano · investment club · local history project',essay:'Wondered why a neighborhood’s empty storefronts told a different story from its economic statistics.',avatar:'#e8b487',hair:'#2b211e'},
+ {name:'Isabella Rossi',city:'Pittsburgh, PA',sat:'1550',gpa:'3.98',rigor:'14 AP / advanced courses',act:'Architecture intern · theater designer · physics tutor · urban design volunteer',essay:'Sketched her way through an essay about the invisible architecture of public spaces.',avatar:'#d89b76',hair:'#633a24'},
+ {name:'Gabby Escamilla',city:'Sacramento, CA',sat:'1600',gpa:'4.00',rigor:'16 AP / advanced courses',act:'Club Founder · Top Missionary · Academic Weapon · Really cute',essay:'Sum smart prolly',avatar:'#d89b76',hair:'#633a24'},
+ {name:'Jordan Ellis',city:'Detroit, MI',sat:'1570',gpa:'3.95',rigor:'15 AP / advanced courses',act:'Engineering maker · basketball captain · auto restoration · STEM mentor',essay:'Compared restoring an old car with restoring belief in your own ability to make things.',avatar:'#8b583f',hair:'#12100f'},
+ {name:'Grace Nguyen',city:'San Francisco, CA',sat:'1540',gpa:'3.99',rigor:'15 AP / advanced courses',act:'Linguistics research · orchestra · language club founder · library volunteer',essay:'Explored a single untranslatable word and what it taught her about curiosity.',avatar:'#d9a37c',hair:'#201715'},
+ {name:'Marcus Hill',city:'Atlanta, GA',sat:'1560',gpa:'3.94',rigor:'14 AP / advanced courses',act:'Public policy intern · track captain · student radio host · tutoring',essay:'Argued that good public policy should sound less like a spreadsheet and more like a conversation.',avatar:'#74462f',hair:'#15110e'},
+ {name:'Chloe Wilson',city:'Raleigh, NC',sat:'1570',gpa:'3.97',rigor:'16 AP / advanced courses',act:'Genetics lab intern · robotics · creative writing · hospice volunteer',essay:'A tender essay about making complicated ideas understandable without making them smaller.',avatar:'#e3af88',hair:'#654128'},
+ {name:'Samir Patel',city:'Princeton, NJ',sat:'1590',gpa:'3.96',rigor:'16 AP / advanced courses',act:'Math team captain · chess · physics research · youth soccer coach',essay:'Explained a difficult theorem by comparing it to teaching soccer drills to eight-year-olds.',avatar:'#a96a45',hair:'#211612'},
+ {name:'Ruby Adams',city:'Nashville, TN',sat:'1530',gpa:'4.00',rigor:'14 AP / advanced courses',act:'Singer-songwriter · civic journalism · literacy nonprofit · theater stage manager',essay:'Asked why some stories get stages and others get lost, then quietly offered an answer.',avatar:'#c27e58',hair:'#6a3b24'},
+ {name:'Theo Morgan',city:'New Orleans, LA',sat:'1550',gpa:'3.95',rigor:'14 AP / advanced courses',act:'Urban ecology researcher · trumpet · youth council · cooking club founder',essay:'Blended wetlands, brass bands, and gumbo into a surprisingly coherent theory of communities.',avatar:'#915838',hair:'#1a100e'}
+
+];
+
+// Extra application details: each applicant remains highly competitive, but has a different profile.
+const profileDetails = {
+'Amara Bennett':{satRW:'780',satMath:'780',act:'35 (35M / 36E / 34R / 35S)',program:'Mechanical Engineering',volunteer:'310 hrs'},
+'Ethan Park':{satRW:'790',satMath:'790',act:'35 (36M / 35E / 35R / 34S)',program:'Computer Science',volunteer:'180 hrs'},
+'Sofia Alvarez':{satRW:'760',satMath:'780',act:'35 (35M / 36E / 35R / 34S)',program:'Political Science',volunteer:'260 hrs'},
+'Noah Williams':{satRW:'780',satMath:'790',act:'35 (35M / 35E / 36R / 35S)',program:'Physics',volunteer:'210 hrs'},
+'Tayshuwn Ricketts':{satRW:'800',satMath:'800',act:'35 (35M / 35E / 36R / 35S)',program:'Electrical Engineering',volunteer:'1000 hrs'},
+'Priya Shah':{satRW:'770',satMath:'780',act:'35 (35M / 35E / 35R / 36S)',program:'Biomedical Engineering',volunteer:'320 hrs'},
+'Lucas Moretti':{satRW:'790',satMath:'800',act:'36 (36M / 36E / 35R / 35S)',program:'Economics',volunteer:'145 hrs'},
+'Maya Thompson':{satRW:'780',satMath:'750',act:'34 (34M / 35E / 35R / 34S)',program:'History',volunteer:'290 hrs'},
+'Daniel Kim':{satRW:'770',satMath:'800',act:'36 (36M / 35E / 35R / 36S)',program:'Computer Engineering',volunteer:'235 hrs'},
+'Zoe Carter':{satRW:'760',satMath:'780',act:'35 (35M / 35E / 36R / 35S)',program:'Environmental Science',volunteer:'410 hrs'},
+'Andre Johnson':{satRW:'760',satMath:'800',act:'35 (36M / 34E / 35R / 35S)',program:'Mechanical Engineering',volunteer:'275 hrs'},
+'Lena Fischer':{satRW:'780',satMath:'770',act:'34 (35M / 34E / 34R / 34S)',program:'Economics & Public Policy',volunteer:'360 hrs'},
+'Owen Reed':{satRW:'790',satMath:'800',act:'36 (36M / 36E / 35R / 36S)',program:'Computer Science',volunteer:'190 hrs'},
+'Nia Brooks':{satRW:'760',satMath:'760',act:'35 (34M / 36E / 35R / 35S)',program:'Public Policy',volunteer:'330 hrs'},
+'Arjun Mehta':{satRW:'790',satMath:'790',act:'36 (36M / 35E / 36R / 36S)',program:'Artificial Intelligence & Data Science',volunteer:'160 hrs'},
+'Claire Martin':{satRW:'800',satMath:'760',act:'35 (34M / 36E / 36R / 34S)',program:'Philosophy',volunteer:'245 hrs'},
+'Malcolm Brown':{satRW:'770',satMath:'800',act:'35 (36M / 34E / 35R / 36S)',program:'Astrophysics',volunteer:'175 hrs'},
+'Yuki Tanaka':{satRW:'760',satMath:'770',act:'35 (35M / 34E / 36R / 35S)',program:'Marine Biology',volunteer:'520 hrs'},
+'Elijah Cooper':{satRW:'780',satMath:'770',act:'35 (34M / 36E / 35R / 35S)',program:'Journalism & Media',volunteer:'205 hrs'},
+'Samantha Lee':{satRW:'790',satMath:'800',act:'36 (36M / 36E / 36R / 35S)',program:'Chemistry',volunteer:'315 hrs'},
+'Mateo Rivera':{satRW:'790',satMath:'750',act:'35 (34M / 36E / 35R / 35S)',program:'International Relations',volunteer:'460 hrs'},
+'Aaliyah Grant':{satRW:'780',satMath:'780',act:'35 (35M / 35E / 36R / 34S)',program:'Bioengineering',volunteer:'390 hrs'},
+'Henry Cho':{satRW:'790',satMath:'790',act:'36 (36M / 35E / 35R / 36S)',program:'Finance & Economics',volunteer:'135 hrs'},
+'Isabella Rossi':{satRW:'770',satMath:'780',act:'35 (35M / 35E / 34R / 36S)',program:'Architecture',volunteer:'285 hrs'},
+'Gabby Escamilla':{satRW:'800',satMath:'800',act:'35 (35M / 35E / 34R / 36S)',program:'Psychology',volunteer:'450 hrs'},
+'Jordan Ellis':{satRW:'770',satMath:'800',act:'35 (36M / 34E / 35R / 35S)',program:'Electrical Engineering',volunteer:'225 hrs'},
+'Grace Nguyen':{satRW:'790',satMath:'750',act:'35 (34M / 36E / 36R / 34S)',program:'Linguistics & Cognitive Science',volunteer:'240 hrs'},
+'Marcus Hill':{satRW:'780',satMath:'780',act:'35 (35M / 35E / 35R / 35S)',program:'Political Science',volunteer:'430 hrs'},
+'Chloe Wilson':{satRW:'780',satMath:'790',act:'36 (36M / 35E / 36R / 35S)',program:'Biological Sciences',volunteer:'340 hrs'},
+'Samir Patel':{satRW:'790',satMath:'800',act:'36 (36M / 36E / 36R / 35S)',program:'Mathematics',volunteer:'155 hrs'},
+'Ruby Adams':{satRW:'800',satMath:'730',act:'34 (33M / 36E / 35R / 34S)',program:'English & Creative Writing',volunteer:'375 hrs'},
+'Theo Morgan':{satRW:'770',satMath:'780',act:'35 (35M / 35E / 35R / 34S)',program:'Environmental Engineering',volunteer:'495 hrs'}
+};
+
+let rounds=[], currentRound=0, waitlisted=[], accepted=[], rejected=[];
+const $=id=>document.getElementById(id);
+const pick=(arr,n)=>{let a=[...arr];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)};
+function shuffle(a){return pick(a,a.length)}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'})}
+function avatarHTML(a){return `<div class="avatar" style="--avatar:${a.avatar};--hair:${a.hair}"><div class="hair"></div><div class="eye l"></div><div class="eye r"></div><div class="smile"></div></div>`}
+function cardHTML(a,i){const d=profileDetails[a.name]; return `<article class="app" data-i="${i}"><div class="decision-face"><div class="decision-avatar">${avatarHTML(a)}</div><div class="decision-name">${a.name}</div></div><div class="decision-content"><span class="paperclip">⌇</span>${avatarHTML(a)}<h2>${a.name}</h2><div class="tagline">${a.city}</div><div class="stats"><div class="stat"><span>SAT Total</span><b>${a.sat}</b></div><div class="stat"><span>SAT R&W</span><b>${d.satRW}</b></div><div class="stat"><span>SAT Math</span><b>${d.satMath}</b></div><div class="stat"><span>ACT</span><b style="font-size:12px">${d.act.split(' ')[0]}</b></div><div class="stat"><span>Volunteer</span><b style="font-size:13px">${d.volunteer}</b></div><div class="stat"><span>GPA</span><b>${a.gpa}</b></div></div><div class="section-title">Program intent</div><div class="essay" style="margin-top:6px;background:#e8f6ff;border-style:solid;font-weight:800">${d.program}</div><div class="section-title">Coursework</div><div class="essay" style="margin-top:6px">${a.rigor}</div><div class="section-title">Activities</div><ul class="activities">${a.act.split(' · ').map(x=>`<li>${x}</li>`).join('')}</ul><div class="section-title">Testing breakdown</div><div class="essay" style="margin-top:6px">SAT: ${a.sat} total (${d.satRW} R&W + ${d.satMath} Math)<br>ACT: ${d.act}</div><div class="section-title">Personal essay</div><div class="essay">“${a.essay}”</div><div class="stamp" data-stamp>DECISION</div><div class="actions"><button class="btn green" onclick="decide(${i},'accept')">ACCEPT</button><button class="btn blue" onclick="decide(${i},'wait')">WAITLIST</button><button class="btn red" onclick="decide(${i},'reject')">REJECT</button></div></div></article>`}
+function startGame(){
+ const name=$('schoolInput').value.trim()||'Escamilla University';
+ $('schoolTitle').textContent=name; $('finalSchool').textContent=name;
+ rounds=[]; accepted=[];waitlisted=[];rejected=[];currentRound=0;
+ const pool=shuffle(applicants);for(let i=0;i<10;i++) rounds.push(pool.slice(i*3,i*3+3));
+ show('game');renderRound();
+}
+function renderRound(){
+ $('roundLabel').textContent=`ROUND ${currentRound+1} / 10`;
+ $('notice').textContent=accepted.length>=10
+   ? `Your class is full at ${accepted.length}/10. WAITLIST or REJECT the remaining applicants.`
+   : `Three strong files. Make any decisions you like. ACCEPT: ${accepted.length}/10 seats filled.`;
+ $('cards').innerHTML=rounds[currentRound].map(cardHTML).join('');
+ document.querySelectorAll('.app').forEach((c,idx)=>{
+   c.style.animationDelay=(idx*90)+'ms';
+   if(accepted.length>=10) c.querySelector('.actions .btn.green').disabled=true;
+ });
+}
+function decide(i,decision){
+ const r=rounds[currentRound][i];
+ const card=document.querySelector(`.app[data-i="${i}"]`);
+ if(card.classList.contains('chosen')) return;
+ // Lock the card's current height before collapsing its contents, so decisions never cause a layout jump.
+ card.style.height=card.offsetHeight+'px';
+ if(decision==='accept' && accepted.length>=10){
+   $('notice').textContent='Your class is full: 10/10 seats. You can still WAITLIST or REJECT applicants.';
+   return;
+ }
+ card.classList.add('chosen');
+ card.dataset.decision=decision;
+ const stamp=card.querySelector('[data-stamp]');
+ stamp.textContent=decision.toUpperCase();
+ stamp.style.display='block';
+ stamp.style.setProperty('--stamp', decision==='accept'?'#0bd63d':decision==='wait'?'#ff8c00':'#f01919');
+ card.querySelectorAll('button').forEach(b=>b.disabled=true);
+ if(decision==='accept') accepted.push(r);
+ if(decision==='wait') waitlisted.push(r);
+ if(decision==='reject') rejected.push(r);
+ const cards=[...document.querySelectorAll('.app')];
+ const now=cards.filter(x=>x.classList.contains('chosen')).length;
+ $('notice').textContent=`Decided: ${now}/3 this round · ACCEPT: ${accepted.length}/10 seats · WAITLIST: ${waitlisted.length}`;
+ if(now===3){
+   $('notice').textContent=accepted.length>=10
+     ? 'Class full! This round is complete. Keep sorting applicants…'
+     : 'Round complete! Mail sorted. On to the next three…';
+   setTimeout(()=>{ currentRound++; currentRound<10?renderRound():renderWaitlist(); },500);
+ }
+}
+function renderWaitlist(){
+ show('waitlist');
+ $('waitList').innerHTML=waitlisted.map((a,i)=>`<div class="wait-card">${avatarHTML(a)}<div class="mini"><h3>${a.name}</h3><p><b>${a.sat}</b> SAT · <b>${profileDetails[a.name].act.split(' ')[0]}</b> ACT · <b>${a.gpa}</b> GPA · <b>${profileDetails[a.name].volunteer}</b> volunteer hrs</p><p><b>${profileDetails[a.name].program}</b> · ${a.rigor}</p><p>${a.act}</p></div><button class="btn purple" onclick="chooseWait(${i})">ADMIT</button></div>`).join('')|| '<div class="empty">Your waitlist is mysteriously empty. The admissions office has concerns.</div>';
+}
+function chooseWait(i){ if(accepted.length>=11) return; accepted.push(waitlisted[i]); renderFinal() }
+function renderFinal(){
+ show('final');
+ $('finalSummary').textContent=accepted.length===11 ? 'Your 11-seat inaugural class is officially complete.' : `You admitted ${accepted.length} students to your inaugural class.`;
+ $('accepted').innerHTML=accepted.map((a,i)=>`<div class="accepted-card">${avatarHTML(a)}<div><h3 style="margin:0 0 4px">${a.name}</h3><div style="font-size:13px;font-weight:700">${a.city} · ${a.sat} SAT · ${profileDetails[a.name].act.split(' ')[0]} ACT · ${a.gpa} GPA · ${profileDetails[a.name].volunteer} volunteer hrs</div><div style="font-size:12px;margin-top:4px"><b>${profileDetails[a.name].program}</b> · ${a.act}</div></div></div>`).join('');
+}
+$('startBtn').addEventListener('click',startGame);$('schoolInput').addEventListener('keydown',e=>{if(e.key==='Enter')startGame()});$('againBtn').addEventListener('click',()=>show('start'));
+</script>
+</body>
+</html>
