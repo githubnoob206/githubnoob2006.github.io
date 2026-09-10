@@ -916,6 +916,36 @@ function botAI(dt){
   }
 }
 
+function segmentCircleHit(x1,y1,x2,y2,cx,cy,r){
+  const dx=x2-x1;
+  const dy=y2-y1;
+
+  const fx=x1-cx;
+  const fy=y1-cy;
+
+  const rr=r*r;
+
+  if(fx*fx+fy*fy<=rr)return true;
+
+  const len2=dx*dx+dy*dy;
+
+  if(len2===0)return false;
+
+  const t=clamp(
+    -(fx*dx+fy*dy)/len2,
+    0,
+    1
+  );
+
+  const px=x1+dx*t;
+  const py=y1+dy*t;
+
+  return (
+    (px-cx)*(px-cx)+
+    (py-cy)*(py-cy)
+  )<=rr;
+}
+  
 function updateBotBullets(dt){
 
   const bouncing=
