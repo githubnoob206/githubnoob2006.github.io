@@ -10,6 +10,41 @@
 :root{
   --ink:#251d2b; --paper:#fff8df; --cream:#fff2c3; --red:#e95b4b; --gold:#f7c948; --blue:#4a90d9; --green:#25d84f; --purple:#8067c7; --shadow:5px 6px 0 var(--ink);
 }
+
+/* Desktop-only warning */
+#desktopWarning{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  background:#251d2b;
+  color:#fff8df;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:30px;
+}
+
+#desktopWarning .warning-box{
+  max-width:650px;
+}
+
+#desktopWarning h1{
+  font-family:'Bowlby One SC',sans-serif;
+  font-size:clamp(38px,7vw,72px);
+  line-height:1;
+  margin:0 0 18px;
+  color:#f7c948;
+  text-shadow:4px 4px 0 #000;
+}
+
+#desktopWarning p{
+  font-size:22px;
+  font-weight:700;
+  line-height:1.4;
+  margin:0;
+}
+
 *{box-sizing:border-box}
 body{margin:0;background:#d9ecff;color:var(--ink);font-family:'Fredoka',sans-serif;min-height:100vh;overflow-x:hidden}
 body:before,body:after{content:"";position:fixed;z-index:-2;pointer-events:none}
@@ -48,6 +83,15 @@ button,input{font:inherit}
 </style>
 </head>
 <body>
+
+<div id="desktopWarning">
+  <div class="warning-box">
+    <h1>DESKTOP REQUIRED</h1>
+    <p>you're not getting through buddy<br><br>
+  come back on a desktop or laptop to play</p>
+  </div>
+</div>
+  
 <section id="start" class="screen active">
   <div class="panel"><div class="inner">
     <div class="tape"></div>
@@ -224,6 +268,19 @@ function renderFinal(){
  $('accepted').innerHTML=accepted.map((a,i)=>`<div class="accepted-card">${avatarHTML(a)}<div><h3 style="margin:0 0 4px">${a.name}</h3><div style="font-size:13px;font-weight:700">${a.city} · ${a.sat} SAT · ${profileDetails[a.name].act.split(' ')[0]} ACT · ${a.gpa} GPA · ${profileDetails[a.name].volunteer} volunteer hrs</div><div style="font-size:12px;margin-top:4px"><b>${profileDetails[a.name].program}</b> · ${a.act}</div></div></div>`).join('');
 }
 $('startBtn').addEventListener('click',startGame);$('schoolInput').addEventListener('keydown',e=>{if(e.key==='Enter')startGame()});$('againBtn').addEventListener('click',()=>show('start'));
+
+function checkDesktop(){
+  const warning = $('desktopWarning');
+
+  if(window.innerWidth < 800){
+    warning.style.display = 'flex';
+  }else{
+    warning.style.display = 'none';
+  }
+}
+
+checkDesktop();
+window.addEventListener('resize', checkDesktop);
 </script>
 </body>
 </html>
