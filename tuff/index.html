@@ -272,7 +272,21 @@ $('startBtn').addEventListener('click',startGame);$('schoolInput').addEventListe
 function checkDesktop(){
   const warning = $('desktopWarning');
 
-  if(window.innerWidth < 800){
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+
+  const isMobile =
+    /android/i.test(ua) ||
+    /webos/i.test(ua) ||
+    /iphone/i.test(ua) ||
+    /ipad/i.test(ua) ||
+    /ipod/i.test(ua) ||
+    /blackberry/i.test(ua) ||
+    /iemobile/i.test(ua) ||
+    /opera mini/i.test(ua);
+
+  const isSmallScreen = window.innerWidth < 800;
+
+  if(isMobile || isSmallScreen){
     warning.style.display = 'flex';
   }else{
     warning.style.display = 'none';
