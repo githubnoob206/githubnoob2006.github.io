@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BOUNCE! — Cartoon Duel</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#252b35}
+  body{font-family:Arial Black,Impact,sans-serif}
+  canvas{display:block;width:100vw;height:100vh;cursor:crosshair}
+  #ui{
+    position:fixed;inset:0;pointer-events:none;
+    color:#f4ead2;text-shadow:2px 2px 0 #11151c;
+  }
+  #title{
+    position:absolute;left:50%;top:18px;transform:translateX(-50%) rotate(-1deg);
+    font-size:clamp(28px,4vw,52px);letter-spacing:3px;
+  }
+  #help{
+    position:absolute;left:50%;bottom:18px;transform:translateX(-50%);
+    font-family:Arial,sans-serif;font-weight:900;font-size:14px;
+    background:#303744;border:3px solid #11151c;border-radius:14px;padding:8px 14px;
+  }
+  #mode{
+    position:absolute;right:20px;top:18px;pointer-events:auto;
+    font-family:Arial,sans-serif;font-weight:900;font-size:14px;
+    background:#303744;border:3px solid #11151c;border-radius:12px;padding:9px 12px;
+  }
+  #mode button{
+    border:2px solid #17212b;background:#252b35;border-radius:8px;
+    font-weight:900;padding:5px 9px;margin-left:5px;cursor:pointer
+  }
+  #mode button.active{background:#11151c;color:#f4ead2}
+  #message, #menu{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    text-align:center;pointer-events:auto;
+    background:#303744;border:5px solid #17212b;border-radius:24px;
+    padding:25px 38px;box-shadow:8px 8px 0 #17212b;
+  }
+  #message{display:none}
+  #message h1{margin:0 0 8px;font-size:clamp(34px,7vw,72px)}
+  #message p{margin:0 0 16px;font-family:Arial,sans-serif;font-weight:900}
+  .menu-btn{
+    border:3px solid #11151c;border-radius:12px;background:#d94b45;
+    color:#f4ead2;padding:10px 20px;font:900 16px Arial;cursor:pointer;margin:5px
+  }
+  #lobbyList{max-height:150px;overflow-y:auto;margin:15px 0;background:#252b35;padding:10px;border-radius:8px;text-align:left}
+  .lobby-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-family:Arial,sans-serif;font-weight:bold}
+  .lobby-item button{background:#3b78d8;color:#f4ead2;border:none;padding:5px 10px;border-radius:6px;cursor:pointer}
+</style>
+<!-- Include Socket.io client script -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="menu">
+  <h1>BOUNCE!</h1>
+  <p>Choose Game Mode</p>
+  <button class="menu-btn" id="playBotBtn">Play vs Bot</button>
+  <hr style="border:1px solid #17212b;margin:15px 0">
+  <p>Multiplayer Public Lobbies</p>
+  <input id="lobbyNameInput" type="text" placeholder="Lobby Name" style="padding:8px;border-radius:8px;border:2px solid #11151c;font-weight:bold">
+  <button class="menu-btn" id="createLobbyBtn">Create Lobby</button>
+  <div id="lobbyList"><em>Loading lobbies...</em></div>
+</div>
+
+<div id="ui">
+  <div id="title">BOUNCE!</div>
+  <div id="mode" style="display:none">
+    <span id="roomStatus">LOBBY</span>
+    <button id="startMultiBtn" style="display:none;background:#4f9f62;color:#fff">START GAME</button>
+  </div>
+  <div id="help">W A S D to move • Mouse to aim • Click to shoot</div>
+  <div id="message">
+    <h1 id="result"></h1>
+    <p id="resultSub"></p>
+    <button id="restart" class="menu-btn">PLAY AGAIN</button>
+  </div>
+</div>
+
+<script>
+// Connect to your live Render backend server
+const socket = io('https://bounce-multiplayer-server.onrender.com');
+
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+let W,H,dpr;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+  canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
+
+const keys={};
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
+
+const mouse={x:W/2,y:H/2,down:false};
+canvas.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+canvas.addEventListener('mousedown',e=>{if(e.button===0){mouse.down=true;shootPlayer()}});
+addEventListener('mouseup',e=>{if(e.button===0)mouse.down=false});
+
+let gameMode='menu'; // 'menu', 'bot', 'multiplayer'
+let isHost=false, currentLobby=null, gameStarted=false;
+let gameOver=false,last=performance.now(),shake=0;
+const arena={x:35,y:92,w:()=>W-70,h:()=>H-142};
+
+const player={x:0,y:0,r:19,speed:255,cool:0,color:'#ef5549',name:'YOU'};
+const opponent={x:0,y:0,r:19,speed:225,cool:0,color:'#3b78d8',name:'OPPONENT',vx:0,vy:0};
+
+let bullets=[],sparks=[];
+
+// --- MENU & NETWORK HANDLERS ---
+document.getElementById('playBotBtn').onclick = () => {
+  gameMode = 'bot';
+  document.getElementById('menu').style.display = 'none';
+  document.getElementById('mode').style.display = 'block';
+  document.getElementById('roomStatus').textContent = 'BOT MODE (NORMAL)';
+  resetGame();
+};
+
+document.getElementById('createLobbyBtn').onclick = () => {
+  const name = document.getElementById('lobbyNameInput').value.trim();
+  if(!name) return alert('Enter a lobby name!');
+  socket.emit('createLobby', name);
+  currentLobby = name;
+  isHost = true;
+  document.getElementById('menu').style.display = 'none';
+  document.getElementById('mode').style.display = 'block';
+  document.getElementById('roomStatus').textContent = 'Lobby: ' + name + ' (Waiting for player...)';
+};
+
+socket.on('updateLobbies', (lobbies) => {
+  const list = document.getElementById('lobbyList');
+  if(lobbies.length === 0){ list.innerHTML = '<em>No active lobbies found.</em>'; return; }
+  list.innerHTML = '';
+  lobbies.forEach(lobby => {
+    const div = document.createElement('div');
+    div.className = 'lobby-item';
+    div.innerHTML = `<span>${lobby}</span> <button onclick="joinLobby('${lobby}')">Join</button>`;
+    list.appendChild(div);
+  });
+});
+
+window.joinLobby = (lobbyName) => {
+  currentLobby = lobbyName;
+  isHost = false;
+  socket.emit('joinLobby', lobbyName);
+  document.getElementById('menu').style.display = 'none';
+  document.getElementById('mode').style.display = 'block';
+  document.getElementById('roomStatus').textContent = 'Joined Lobby: ' + lobbyName + ' (Waiting for host to start...)';
+};
+
+socket.on('playerJoined', () => {
+  if(isHost){
+    document.getElementById('roomStatus').textContent = 'Lobby full! Player ready.';
+    document.getElementById('startMultiBtn').style.display = 'inline-block';
+  }
+});
+
+document.getElementById('startMultiBtn').onclick = () => {
+  socket.emit('startGame', currentLobby);
+};
+
+socket.on('gameStarted', () => {
+  gameMode = 'multiplayer';
+  gameStarted = true;
+  document.getElementById('startMultiBtn').style.display = 'none';
+  document.getElementById('roomStatus').textContent = isHost ? 'HOST (Multiplayer)' : 'CLIENT (Multiplayer)';
+  resetGame();
+});
+
+// Real-time synchronization from server
+socket.on('stateUpdated', (data) => {
+  if(gameMode !== 'multiplayer') return;
+  opponent.x = data.x;
+  opponent.y = data.y;
+  if(data.shot){
+    bullets.push(data.shot);
+  }
+});
+
+socket.on('hostRetry', () => {
+  resetGame();
+});
+
+// --- GAME LOGIC ---
+function resetGame(){
+  player.x=arena.x+arena.w()*.25; player.y=arena.y+arena.h()*.5; player.cool=0;
+  opponent.x=arena.x+arena.w()*.75; opponent.y=arena.y+arena.h()*.5; opponent.cool=0;
+  bullets=[];sparks=[];gameOver=false;
+  document.getElementById('message').style.display='none';
+}
+
+function shootPlayer(){
+  if(gameOver) return;
+  if(gameMode === 'bot' && player.cool > 0) return;
+  if(gameMode === 'multiplayer' && (!gameStarted || player.cool > 0)) return;
+  
+  const angle = Math.atan2(mouse.y-player.y, mouse.x-player.x);
+  fire(player, angle);
+}
+
+function fire(shooter,angle){
+  shooter.cool=2;
+  const speed = 285;
+  const newBullet = {
+    x:shooter.x+Math.cos(angle)*23, y:shooter.y+Math.sin(angle)*23,
+    vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+    owner: shooter===player ? 'player' : 'opponent',
+    age:0, curve:(Math.random()-.5)*8, rot:angle
+  };
+  bullets.push(newBullet);
+
+  if(gameMode === 'multiplayer'){
+    socket.emit('syncState', currentLobby, { x: player.x, y: player.y, shot: newBullet });
+  }
+}
+
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+function movePlayer(dt){
+  let x=(keys.d?1:0)-(keys.a?1:0),y=(keys.s?1:0)-(keys.w?1:0);
+  const l=Math.hypot(x,y)||1;
+  player.vx=x/l*player.speed; player.vy=y/l*player.speed;
+  player.x=clamp(player.x+player.vx*dt,arena.x+24,arena.x+arena.w()-24);
+  player.y=clamp(player.y+player.vy*dt,arena.y+24,arena.y+arena.h()-24);
+  player.cool=Math.max(0,player.cool-dt);
+  if(mouse.down) shootPlayer();
+
+  if(gameMode === 'multiplayer' && gameStarted) {
+    socket.emit('syncState', currentLobby, { x: player.x, y: player.y, shot: null });
+  }
+}
+
+// Bot AI kept separate
+const bot={vx:0,vy:0,decision:0,aimJitter:0,targetAngle:0};
+function botAI(dt){
+  if(gameMode !== 'bot') return;
+  const left=arena.x+24,right=arena.x+arena.w()-24,top=arena.y+24,bottom=arena.y+arena.h()-24;
+  let tx=opponent.x,ty=opponent.y;
+  
+  const targetX=player.x + Math.cos(performance.now()/1100)*180;
+  const targetY=player.y + Math.sin(performance.now()/900)*150;
+  tx=targetX; ty=targetY;
+
+  tx=clamp(tx,left,right); ty=clamp(ty,top,bottom);
+  let dx=tx-opponent.x, dy=ty-opponent.y, l=Math.hypot(dx,dy)||1;
+  
+  opponent.vx += ((dx/l)*opponent.speed-opponent.vx)*Math.min(1,dt*7);
+  opponent.vy += ((dy/l)*opponent.speed-opponent.vy)*Math.min(1,dt*7);
+  opponent.x=clamp(opponent.x+opponent.vx*dt,left,right);
+  opponent.y=clamp(opponent.y+opponent.vy*dt,top,bottom);
+
+  bot.decision-=dt;
+  if(bot.decision<=0){
+    bot.decision=0.34;
+    let ax=player.x, ay=player.y;
+    bot.targetAngle=Math.atan2(ay-opponent.y,ax-opponent.x);
+  }
+  opponent.cool-=dt;
+  if(opponent.cool<=0){
+    fire(opponent, bot.targetAngle);
+    opponent.cool=2;
+  }
+}
+
+function segmentCircleHit(x1,y1,x2,y2,cx,cy,r){
+  const dx=x2-x1,dy=y2-y1,fx=x1-cx,fy=y1-cy,rr=r*r;
+  if(fx*fx+fy*fy<=rr)return true;
+  const len2=dx*dx+dy*dy;
+  if(len2===0)return false;
+  const t=clamp(-(fx*dx+fy*dy)/len2,0,1);
+  const px=x1+dx*t,py=y1+dy*t;
+  return (px-cx)*(px-cx)+(py-cy)*(py-cy)<=rr;
+}
+
+function updateBullets(dt){
+  const L=arena.x+13,R=arena.x+arena.w()-13,T=arena.y+13,B=arena.y+arena.h()-13;
+
+  for(let i=bullets.length-1;i>=0;i--){
+    const b=bullets[i];
+    const oldX=b.x,oldY=b.y;
+    b.age+=dt;
+
+    const sp=Math.hypot(b.vx,b.vy)||1;
+    const nx=-b.vy/sp,ny=b.vx/sp;
+    b.vx+=nx*b.curve*dt; b.vy+=ny*b.curve*dt;
+
+    const nextX=b.x+b.vx*dt, nextY=b.y+b.vy*dt;
+
+    // Check hits
+    let hitTarget=null;
+    const targets = [player, opponent];
+    for(const target of targets){
+      if(segmentCircleHit(oldX,oldY,nextX,nextY,target.x,target.y,target.r+7)){
+        hitTarget=target;
+        break;
+      }
+    }
+    if(hitTarget){
+      triggerGameOver(hitTarget);
+      bullets.splice(i,1);
+      continue;
+    }
+
+    b.x=nextX; b.y=nextY; b.rot=Math.atan2(b.vy,b.vx);
+
+    // Bounding walls
+    if(b.x<L||b.x>R||b.y<T||b.y>B){
+      bullets.splice(i,1);
+    }
+  }
+}
+
+function triggerGameOver(target){
+  if(gameOver)return;
+  gameOver=true; shake=12;
+  for(let i=0;i<22;i++)sparks.push({x:target.x,y:target.y,vx:(Math.random()-.5)*500,vy:(Math.random()-.5)*500,life:.65});
+  
+  const isPlayerHit = (target === player);
+  document.getElementById('result').textContent = isPlayerHit ? 'YOU DIED!' : 'VICTORY!';
+  document.getElementById('resultSub').textContent = isPlayerHit ? 'You got hit.' : 'You eliminated your opponent!';
+  
+  const restartBtn = document.getElementById('restart');
+  if(gameMode === 'multiplayer'){
+    restartBtn.style.display = isHost ? 'inline-block' : 'none';
+    if(!isHost) document.getElementById('resultSub').textContent += ' Waiting for host to retry...';
+  } else {
+    restartBtn.style.display = 'inline-block';
+  }
+  document.getElementById('message').style.display='block';
+}
+
+document.getElementById('restart').onclick = () => {
+  if(gameMode === 'multiplayer' && isHost){
+    socket.emit('startGame', currentLobby);
+  } else if(gameMode === 'bot') {
+    resetGame();
+  }
+};
+
+function updateSparks(dt){
+  for(let i=sparks.length-1;i>=0;i--){let s=sparks[i];s.life-=dt;s.x+=s.vx*dt;s.y+=s.vy*dt;if(s.life<=0)sparks.splice(i,1)}
+}
+
+function roundedRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+
+function draw(){
+  ctx.save();
+  if(shake>0){ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.86}
+  ctx.fillStyle='#252b35';ctx.fillRect(0,0,W,H);
+  const ax=arena.x,ay=arena.y,aw=arena.w(),ah=arena.h();
+  ctx.fillStyle='#11151c';roundedRect(ax+6,ay+6,aw,ah,18);
+  ctx.fillStyle='#303744';roundedRect(ax,ay,aw,ah,18);
+  ctx.lineWidth=4;ctx.strokeStyle='#11151c';ctx.stroke();
+
+  drawPlayer(player);
+  drawPlayer(opponent, '#3b78d8');
+  for(const b of bullets)drawBullet(b);
+  for(const s of sparks){ctx.globalAlpha=Math.max(0,s.life/.65);ctx.fillStyle='#d94b45';ctx.fillRect(s.x-3,s.y-3,6,6)}
+  ctx.globalAlpha=1;
+  ctx.restore();
+
+  drawCooldown(player,20,H-58,'YOU');
+  drawCooldown({cool:opponent.cool},W-120,H-58, gameMode==='bot'?'BOT':'OPP');
+}
+
+function drawPlayer(p, color=p.color){
+  ctx.save();ctx.translate(p.x,p.y);
+  ctx.fillStyle='#11151c';ctx.beginPath();ctx.ellipse(3,7,21,10,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=color;ctx.beginPath();ctx.arc(0,0,p.r,0,Math.PI*2);ctx.fill();
+  ctx.lineWidth=5;ctx.strokeStyle='#11151c';ctx.stroke();
+  ctx.restore();
+}
+
+function drawBullet(b){
+  ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.rot);
+  ctx.fillStyle='#11151c';roundedRect(-13,-7,28,14,6);
+  ctx.fillStyle='#d99a35';roundedRect(-10,-4,21,8,4);
+  ctx.restore();
+}
+
+function drawCooldown(p,x,y,label){
+  const ready=p.cool<=0;
+  ctx.fillStyle='#303744';ctx.strokeStyle='#11151c';ctx.lineWidth=3;
+  roundedRect(x,y,100,28,10);ctx.stroke();
+  ctx.fillStyle=ready?'#4f9f62':'#e95c4f';
+  const pct=ready?1:Math.max(0,1-p.cool/2);
+  roundedRect(x+3,y+3,94*pct,22,7);
+  ctx.fillStyle='#11151c';ctx.font='900 12px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(label,x+50,y+14);
+}
+
+function loop(t){
+  const dt=Math.min(.033,(t-last)/1000);last=t;
+  if(gameMode !== 'menu'){
+    if(!gameOver && (gameMode === 'bot' || (gameMode === 'multiplayer' && gameStarted))){
+      movePlayer(dt);
+      botAI(dt);
+      updateBullets(dt);
+    }
+    updateSparks(dt);
+    draw();
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
