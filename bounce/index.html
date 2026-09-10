@@ -1,395 +1,1530 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BOUNCE! — Cartoon Duel</title>
+
 <style>
   *{box-sizing:border-box}
-  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#252b35}
-  body{font-family:Arial Black,Impact,sans-serif}
-  canvas{display:block;width:100vw;height:100vh;cursor:crosshair}
+
+  html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#252b35
+  }
+
+  body{
+    font-family:Arial Black,Impact,sans-serif
+  }
+
+  canvas{
+    display:block;
+    width:100vw;
+    height:100vh;
+    cursor:crosshair
+  }
+
   #ui{
-    position:fixed;inset:0;pointer-events:none;
-    color:#f4ead2;text-shadow:2px 2px 0 #11151c;
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    color:#f4ead2;
+    text-shadow:2px 2px 0 #11151c;
   }
+
+  /* =========================
+     MAIN MENU
+     ========================= */
+
+  #mainMenu{
+    position:fixed;
+    inset:0;
+    z-index:20;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:#252b35;
+    pointer-events:auto;
+  }
+
+  #mainMenu h1{
+    margin:0;
+    font-size:clamp(60px,12vw,140px);
+    letter-spacing:8px;
+    transform:rotate(-2deg);
+    text-shadow:
+      6px 6px 0 #11151c,
+      10px 10px 0 #17212b;
+  }
+
+  #mainMenu p{
+    margin:8px 0 30px;
+    font-family:Arial,sans-serif;
+    font-weight:900;
+    font-size:18px;
+    color:#d8d0bc;
+  }
+
+  #playButton{
+    border:5px solid #11151c;
+    border-radius:18px;
+    background:#4f9f62;
+    color:#f4ead2;
+    padding:16px 65px;
+    font:900 28px Arial Black,Impact,sans-serif;
+    cursor:pointer;
+    box-shadow:7px 7px 0 #11151c;
+    transition:transform .08s,box-shadow .08s;
+  }
+
+  #playButton:hover{
+    transform:translateY(-3px);
+    box-shadow:7px 10px 0 #11151c;
+  }
+
+  #playButton:active{
+    transform:translate(5px,5px);
+    box-shadow:2px 2px 0 #11151c;
+  }
+
+  /* =========================
+     GAME UI
+     ========================= */
+
+  #gameUI{
+    display:none;
+  }
+
   #title{
-    position:absolute;left:50%;top:18px;transform:translateX(-50%) rotate(-1deg);
-    font-size:clamp(28px,4vw,52px);letter-spacing:3px;
+    position:absolute;
+    left:50%;
+    top:18px;
+    transform:translateX(-50%) rotate(-1deg);
+    font-size:clamp(28px,4vw,52px);
+    letter-spacing:3px;
   }
+
   #help{
-    position:absolute;left:50%;bottom:18px;transform:translateX(-50%);
-    font-family:Arial,sans-serif;font-weight:900;font-size:14px;
-    background:#303744;border:3px solid #11151c;border-radius:14px;padding:8px 14px;
+    position:absolute;
+    left:50%;
+    bottom:18px;
+    transform:translateX(-50%);
+    font-family:Arial,sans-serif;
+    font-weight:900;
+    font-size:14px;
+    background:#303744;
+    border:3px solid #11151c;
+    border-radius:14px;
+    padding:8px 14px;
   }
+
   #mode{
-    position:absolute;right:20px;top:18px;pointer-events:auto;
-    font-family:Arial,sans-serif;font-weight:900;font-size:14px;
-    background:#303744;border:3px solid #11151c;border-radius:12px;padding:9px 12px;
+    position:absolute;
+    right:20px;
+    top:18px;
+    pointer-events:auto;
+    font-family:Arial,sans-serif;
+    font-weight:900;
+    font-size:14px;
+    background:#303744;
+    border:3px solid #11151c;
+    border-radius:12px;
+    padding:9px 12px;
   }
+
   #mode button{
-    border:2px solid #17212b;background:#252b35;border-radius:8px;
-    font-weight:900;padding:5px 9px;margin-left:5px;cursor:pointer
+    border:2px solid #17212b;
+    background:#252b35;
+    color:#f4ead2;
+    border-radius:8px;
+    font-weight:900;
+    padding:5px 9px;
+    margin-left:5px;
+    cursor:pointer
   }
-  #mode button.active{background:#11151c;color:#f4ead2}
+
+  #mode button.active{
+    background:#11151c;
+    color:#f4ead2
+  }
+
+  /* =========================
+     PAUSE BUTTON
+     ========================= */
+
+  #pauseButton{
+    position:absolute;
+    left:20px;
+    top:18px;
+    pointer-events:auto;
+    border:3px solid #11151c;
+    background:#303744;
+    color:#f4ead2;
+    border-radius:12px;
+    padding:9px 14px;
+    font:900 14px Arial,sans-serif;
+    cursor:pointer;
+  }
+
+  #pauseButton:hover{
+    background:#3a4352;
+  }
+
+  /* =========================
+     PAUSE MENU
+     ========================= */
+
+  #pauseMenu{
+    position:absolute;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:rgba(17,21,28,.72);
+    pointer-events:auto;
+  }
+
+  #pauseBox{
+    text-align:center;
+    background:#303744;
+    border:5px solid #17212b;
+    border-radius:24px;
+    padding:28px 42px;
+    box-shadow:8px 8px 0 #17212b;
+  }
+
+  #pauseBox h1{
+    margin:0 0 20px;
+    font-size:clamp(40px,7vw,72px);
+  }
+
+  .pauseAction{
+    display:block;
+    width:220px;
+    margin:10px auto;
+    border:3px solid #11151c;
+    border-radius:12px;
+    background:#4f9f62;
+    color:#f4ead2;
+    padding:11px 20px;
+    font:900 17px Arial,sans-serif;
+    cursor:pointer;
+  }
+
+  #menuButton{
+    background:#d94b45;
+  }
+
+  /* =========================
+     GAME OVER
+     ========================= */
+
   #message{
-    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    text-align:center;display:none;pointer-events:auto;
-    background:#303744;border:5px solid #17212b;border-radius:24px;
-    padding:25px 38px;box-shadow:8px 8px 0 #17212b;
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    display:none;
+    pointer-events:auto;
+    background:#303744;
+    border:5px solid #17212b;
+    border-radius:24px;
+    padding:25px 38px;
+    box-shadow:8px 8px 0 #17212b;
   }
-  #message h1{margin:0 0 8px;font-size:clamp(34px,7vw,72px)}
-  #message p{margin:0 0 16px;font-family:Arial,sans-serif;font-weight:900}
+
+  #message h1{
+    margin:0 0 8px;
+    font-size:clamp(34px,7vw,72px)
+  }
+
+  #message p{
+    margin:0 0 16px;
+    font-family:Arial,sans-serif;
+    font-weight:900
+  }
+
   #restart{
-    border:3px solid #11151c;border-radius:12px;background:#d94b45;
-    color:#f4ead2;padding:10px 20px;font:900 16px Arial;cursor:pointer
+    border:3px solid #11151c;
+    border-radius:12px;
+    background:#d94b45;
+    color:#f4ead2;
+    padding:10px 20px;
+    font:900 16px Arial;
+    cursor:pointer
   }
 </style>
 </head>
+
 <body>
+
 <canvas id="game"></canvas>
+
 <div id="ui">
-  <div id="title">BOUNCE!</div>
-  <div id="mode">
-    BOT:
-    <button id="normal" class="active">NORMAL</button>
-    <button id="hard">HARD</button>
-    <label style="margin-left:10px">BULLET SPEED
-      <input id="bulletSpeed" type="number" min="1" step="1" value="285"
-        style="width:90px;background:#3a4352;color:#f4ead2;border:2px solid #11151c;border-radius:7px;padding:5px;font-weight:900">
-    </label>
-    <label style="margin-left:10px;white-space:nowrap">
-      <input id="bounceToggle" type="checkbox" checked>
-      BOUNCE
-    </label>
+
+  <!-- =========================
+       MAIN MENU
+       ========================= -->
+
+  <div id="mainMenu">
+    <h1>BOUNCE!</h1>
+    <p>Cartoon Duel</p>
+    <button id="playButton">PLAY</button>
   </div>
-  <div id="help">W A S D to move • Mouse to aim • Click to shoot</div>
-  <div id="message">
-    <h1 id="result"></h1>
-    <p id="resultSub"></p>
-    <button id="restart">PLAY AGAIN</button>
+
+  <!-- =========================
+       GAME UI
+       ========================= -->
+
+  <div id="gameUI">
+
+    <div id="title">BOUNCE!</div>
+
+    <button id="pauseButton">⏸ PAUSE</button>
+
+    <div id="mode">
+      BOT:
+      <button id="normal" class="active">NORMAL</button>
+      <button id="hard">HARD</button>
+    </div>
+
+    <div id="help">
+      W A S D to move • Mouse to aim • Click to shoot
+    </div>
+
+    <!-- =========================
+         PAUSE MENU
+         ========================= -->
+
+    <div id="pauseMenu">
+      <div id="pauseBox">
+        <h1>PAUSED</h1>
+
+        <button id="resumeButton" class="pauseAction">
+          ▶ RESUME
+        </button>
+
+        <button id="menuButton" class="pauseAction">
+          MAIN MENU
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================
+         GAME OVER
+         ========================= -->
+
+    <div id="message">
+      <h1 id="result"></h1>
+      <p id="resultSub"></p>
+      <button id="restart">PLAY AGAIN</button>
+    </div>
+
   </div>
+
 </div>
 
 <script>
-const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+
 let W,H,dpr;
-function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
-  canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
-addEventListener('resize',resize);resize();
+
+function resize(){
+  dpr=Math.min(devicePixelRatio||1,2);
+  W=innerWidth;
+  H=innerHeight;
+
+  canvas.width=W*dpr;
+  canvas.height=H*dpr;
+
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+addEventListener('resize',resize);
+resize();
+
+
+/* =========================
+   INPUT
+   ========================= */
 
 const keys={};
-addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true});
-addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
 
-const mouse={x:W/2,y:H/2,down:false};
-canvas.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
-canvas.addEventListener('mousedown',e=>{if(e.button===0){mouse.down=true;shootPlayer()}});
-addEventListener('mouseup',e=>{if(e.button===0)mouse.down=false});
+addEventListener('keydown',e=>{
+  keys[e.key.toLowerCase()]=true;
 
-let mode='normal',gameOver=false,last=performance.now(),shake=0;
-const arena={x:35,y:92,w:()=>W-70,h:()=>H-142};
+  // ESC toggles pause while playing
+  if(e.key==='Escape' && gameStarted && !gameOver){
+    togglePause();
+  }
+});
 
-const player={x:0,y:0,r:19,speed:255,cool:0,color:'#ef5549',name:'YOU'};
-const bot={x:0,y:0,r:19,speed:225,cool:0,color:'#3b78d8',name:'BOT',
-  vx:0,vy:0,dodgeX:0,dodgeY:0,decision:0,aimJitter:0};
+addEventListener('keyup',e=>{
+  keys[e.key.toLowerCase()]=false;
+});
 
-let bullets=[],sparks=[],dust=[];
+
+const mouse={
+  x:W/2,
+  y:H/2,
+  down:false
+};
+
+canvas.addEventListener('mousemove',e=>{
+  mouse.x=e.clientX;
+  mouse.y=e.clientY;
+});
+
+canvas.addEventListener('mousedown',e=>{
+  if(e.button===0){
+    mouse.down=true;
+
+    if(gameStarted && !paused){
+      shootPlayer();
+    }
+  }
+});
+
+addEventListener('mouseup',e=>{
+  if(e.button===0){
+    mouse.down=false;
+  }
+});
+
+
+/* =========================
+   GAME STATE
+   ========================= */
+
+let mode='normal';
+let gameOver=false;
+let paused=false;
+let gameStarted=false;
+
+let last=performance.now();
+let shake=0;
+
+const arena={
+  x:35,
+  y:92,
+  w:()=>W-70,
+  h:()=>H-142
+};
+
+
+/* =========================
+   PLAYERS
+   ========================= */
+
+const player={
+  x:0,
+  y:0,
+  r:19,
+  speed:255,
+  cool:0,
+  color:'#ef5549',
+  name:'YOU',
+  vx:0,
+  vy:0
+};
+
+const bot={
+  x:0,
+  y:0,
+  r:19,
+  speed:225,
+  cool:0,
+  color:'#3b78d8',
+  name:'BOT',
+
+  vx:0,
+  vy:0,
+
+  dodgeX:0,
+  dodgeY:0,
+  decision:0,
+  aimJitter:0,
+  targetAngle:0
+};
+
+
+let bullets=[];
+let sparks=[];
+let dust=[];
+
+
+/* =========================
+   RESET
+   ========================= */
 
 function reset(){
-  player.x=arena.x+arena.w()*.25; player.y=arena.y+arena.h()*.5; player.cool=0;
-  bot.x=arena.x+arena.w()*.75; bot.y=arena.y+arena.h()*.5; bot.cool=.8;
-  bot.vx=bot.vy=0;bot.decision=0;bot.aimJitter=0;
-  bullets=[];sparks=[];dust=[];gameOver=false;
+
+  player.x=arena.x+arena.w()*.25;
+  player.y=arena.y+arena.h()*.5;
+  player.cool=0;
+  player.vx=0;
+  player.vy=0;
+
+  bot.x=arena.x+arena.w()*.75;
+  bot.y=arena.y+arena.h()*.5;
+  bot.cool=.8;
+
+  bot.vx=0;
+  bot.vy=0;
+  bot.decision=0;
+  bot.aimJitter=0;
+  bot.targetAngle=0;
+
+  bullets=[];
+  sparks=[];
+  dust=[];
+
+  gameOver=false;
+  paused=false;
+
   document.getElementById('message').style.display='none';
+  document.getElementById('pauseMenu').style.display='none';
 }
+
+
+/* =========================
+   START / MENU
+   ========================= */
+
+function startGame(){
+
+  gameStarted=true;
+  paused=false;
+
+  document.getElementById('mainMenu').style.display='none';
+  document.getElementById('gameUI').style.display='block';
+
+  reset();
+}
+
+function returnToMenu(){
+
+  gameStarted=false;
+  paused=false;
+  gameOver=false;
+
+  mouse.down=false;
+
+  document.getElementById('gameUI').style.display='none';
+  document.getElementById('mainMenu').style.display='flex';
+  document.getElementById('message').style.display='none';
+  document.getElementById('pauseMenu').style.display='none';
+}
+
+
+/* =========================
+   PAUSE
+   ========================= */
+
+function togglePause(){
+
+  if(!gameStarted || gameOver)return;
+
+  paused=!paused;
+
+  document.getElementById('pauseMenu').style.display=
+    paused ? 'flex' : 'none';
+
+  mouse.down=false;
+
+  // Prevent a huge delta when unpausing
+  last=performance.now();
+}
+
+
+/* =========================
+   SHOOTING
+   ========================= */
+
 function shootPlayer(){
-  if(gameOver||player.cool>0)return;
-  fire(player,Math.atan2(mouse.y-player.y,mouse.x-player.x));
+
+  if(
+    !gameStarted ||
+    paused ||
+    gameOver ||
+    player.cool>0
+  )return;
+
+  fire(
+    player,
+    Math.atan2(
+      mouse.y-player.y,
+      mouse.x-player.x
+    )
+  );
 }
+
+
 function fire(shooter,angle){
+
   shooter.cool=2;
-  const speed=Math.max(1, Number(document.getElementById('bulletSpeed').value)||285);
+
+  const speed=285;
+
   bullets.push({
-    x:shooter.x+Math.cos(angle)*23,y:shooter.y+Math.sin(angle)*23,
-    vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
-    owner:shooter,age:0,life:Infinity,curve:(Math.random()-.5)*8,
+    x:shooter.x+Math.cos(angle)*23,
+    y:shooter.y+Math.sin(angle)*23,
+
+    vx:Math.cos(angle)*speed,
+    vy:Math.sin(angle)*speed,
+
+    owner:shooter,
+
+    life:Infinity,
+
+    curve:(Math.random()-.5)*8,
+
     rot:angle
   });
 }
-function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
-function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+
+
+/* =========================
+   HELPERS
+   ========================= */
+
+function clamp(v,a,b){
+  return Math.max(a,Math.min(b,v));
+}
+
+function dist(a,b){
+  return Math.hypot(
+    a.x-b.x,
+    a.y-b.y
+  );
+}
+
+
+/* =========================
+   BOT AI
+   ========================= */
 
 function botAI(dt){
-  const left=arena.x+24,right=arena.x+arena.w()-24,top=arena.y+24,bottom=arena.y+arena.h()-24;
-  let dangerX=0,dangerY=0,minT=Infinity;
 
-  // Predict danger from ALL bullets that can currently hurt the bot.
-  // This includes the bot's own bullets after their 1-second grace period.
-  // We simulate the bullet forward so bounced shots are also treated as threats.
+  const left=arena.x+24;
+  const right=arena.x+arena.w()-24;
+  const top=arena.y+24;
+  const bottom=arena.y+arena.h()-24;
+
+  let dangerX=0;
+  let dangerY=0;
+  let minT=Infinity;
+
+
   for(const b of bullets){
-    if(b.owner===bot && b.age<1) continue; // own shot cannot hurt yet
 
-    let px=b.x,py=b.y,vx=b.vx,vy=b.vy;
-    const lookAhead=mode==='hard'?2.8:2.2;
-    const steps=Math.ceil(lookAhead/0.035);
-    let hitT=Infinity,closestD=Infinity,closestDX=0,closestDY=0;
+    if(b.owner===player){
 
-    for(let step=1;step<=steps;step++){
-      const simDt=0.035;
-      const sp=Math.hypot(vx,vy)||1;
-      const nx=-vy/sp,ny=vx/sp;
-      vx+=nx*b.curve*simDt;
-      vy+=ny*b.curve*simDt;
+      const dx=bot.x-b.x;
+      const dy=bot.y-b.y;
 
-      let nxp=px+vx*simDt,nyp=py+vy*simDt;
+      const vv=b.vx*b.vx+b.vy*b.vy;
 
-      if(document.getElementById('bounceToggle').checked){
-        const L=arena.x+13,R=arena.x+arena.w()-13,T=arena.y+13,B=arena.y+arena.h()-13;
-        if(nxp<L){nxp=L+(L-nxp);vx=Math.abs(vx)}
-        else if(nxp>R){nxp=R-(nxp-R);vx=-Math.abs(vx)}
-        if(nyp<T){nyp=T+(T-nyp);vy=Math.abs(vy)}
-        else if(nyp>B){nyp=B-(nyp-B);vy=-Math.abs(vy)}
-      }
+      if(vv>1){
 
-      const t=step*simDt;
-      const ddx=bot.x-nxp,ddy=bot.y-nyp;
-      const d=Math.hypot(ddx,ddy);
+        const t=clamp(
+          (dx*b.vx+dy*b.vy)/vv,
+          0,
+          2.0
+        );
 
-      if(d<closestD){closestD=d;closestDX=ddx;closestDY=ddy}
+        const px=b.x+b.vx*t;
+        const py=b.y+b.vy*t;
 
-      if(d<72){
-        hitT=t;
-        break;
-      }
+        const d=Math.hypot(
+          bot.x-px,
+          bot.y-py
+        );
 
-      px=nxp;py=nyp;
-    }
+        if(d<65 && t<minT){
 
-    if(hitT<minT){
-      minT=hitT;
-      // Move away from the predicted bullet position.
-      dangerX=closestDX;
-      dangerY=closestDY;
+          minT=t;
 
-      // If the bullet is nearly on the bot's current line, use a lateral
-      // escape direction instead of accidentally running along the bullet.
-      const len=Math.hypot(dangerX,dangerY)||1;
-      dangerX/=len; dangerY/=len;
-      if(Math.abs(dangerX)+Math.abs(dangerY)<0.15){
-        dangerX=-vy; dangerY=vx;
+          dangerX=bot.x-px;
+          dangerY=bot.y-py;
+        }
       }
     }
   }
 
-  // React earlier to both enemy shots and returning/self-made shots.
-  const reaction=(mode==='hard'?1.0:.82);
-  let tx=bot.x,ty=bot.y;
 
-  if(minT<1.8){
-    const len=Math.hypot(dangerX,dangerY)||1;
-    const px=dangerX/len,py=dangerY/len;
+  const reaction=
+    mode==='hard'
+      ? 1.0
+      : .72;
 
-    // Strong radial escape.
-    tx+=px*170*reaction;
-    ty+=py*170*reaction;
 
-    // Add a sideways component so the bot doesn't simply walk back
-    // along the bullet's path into its own returning shot.
-    const side=(mode==='hard'?135:95);
-    const sign=(Math.sin(performance.now()/180)+1)>1 ? 1 : -1;
-    tx+=-py*side*sign;
-    ty+= px*side*sign;
-  }else{
-    // Orbiting / roaming behavior.
-    const targetX=player.x + Math.cos(performance.now()/1100)*180;
-    const targetY=player.y + Math.sin(performance.now()/900)*150;
-    tx=targetX;ty=targetY;
+  let tx=bot.x;
+  let ty=bot.y;
+
+
+  if(minT<1.45){
+
+    const len=
+      Math.hypot(dangerX,dangerY)||1;
+
+    const px=dangerX/len;
+    const py=dangerY/len;
+
+    tx+=px*120*reaction;
+    ty+=py*120*reaction;
+
+
     if(mode==='hard'){
-      tx=player.x + Math.cos(performance.now()/760)*235;
-      ty=player.y + Math.sin(performance.now()/650)*195;
+
+      tx+=-py*105;
+      ty+=px*105;
+    }
+
+  }else{
+
+    const targetX=
+      player.x+
+      Math.cos(performance.now()/1100)*180;
+
+    const targetY=
+      player.y+
+      Math.sin(performance.now()/900)*150;
+
+    tx=targetX;
+    ty=targetY;
+
+
+    if(mode==='hard'){
+
+      tx=
+        player.x+
+        Math.cos(performance.now()/760)*235;
+
+      ty=
+        player.y+
+        Math.sin(performance.now()/650)*195;
     }
   }
 
-  tx=clamp(tx,left,right);ty=clamp(ty,top,bottom);
-  let dx=tx-bot.x,dy=ty-bot.y,l=Math.hypot(dx,dy)||1;
-  let desiredX=dx/l,desiredY=dy/l;
 
-  if(minT<1.8){
-    const mult=mode==='hard'?1.35:1.15;
-    desiredX*=mult;desiredY*=mult;
+  tx=clamp(tx,left,right);
+  ty=clamp(ty,top,bottom);
+
+
+  let dx=tx-bot.x;
+  let dy=ty-bot.y;
+
+  let l=Math.hypot(dx,dy)||1;
+
+  let desiredX=dx/l;
+  let desiredY=dy/l;
+
+
+  if(minT<1.45){
+
+    const mult=
+      mode==='hard'
+        ? 1.18
+        : 1.0;
+
+    desiredX*=mult;
+    desiredY*=mult;
   }
 
-  bot.vx += (desiredX*bot.speed-bot.vx)*Math.min(1,dt*7);
-  bot.vy += (desiredY*bot.speed-bot.vy)*Math.min(1,dt*7);
-  const vl=Math.hypot(bot.vx,bot.vy);
-  if(vl>bot.speed){bot.vx=bot.vx/vl*bot.speed;bot.vy=bot.vy/vl*bot.speed}
-  bot.x=clamp(bot.x+bot.vx*dt,left,right);
-  bot.y=clamp(bot.y+bot.vy*dt,top,bottom);
+
+  bot.vx +=
+    (desiredX*bot.speed-bot.vx)*
+    Math.min(1,dt*5.5);
+
+  bot.vy +=
+    (desiredY*bot.speed-bot.vy)*
+    Math.min(1,dt*5.5);
+
+
+  const vl=
+    Math.hypot(bot.vx,bot.vy);
+
+
+  if(vl>bot.speed){
+
+    bot.vx=
+      bot.vx/vl*bot.speed;
+
+    bot.vy=
+      bot.vy/vl*bot.speed;
+  }
+
+
+  bot.x=clamp(
+    bot.x+bot.vx*dt,
+    left,
+    right
+  );
+
+  bot.y=clamp(
+    bot.y+bot.vy*dt,
+    top,
+    bottom
+  );
+
 
   bot.decision-=dt;
+
+
   if(bot.decision<=0){
-    bot.decision=mode==='hard'?.18:.34;
-    // aim at predicted player position
-    const lead=mode==='hard'?.42:.28;
-    let ax=player.x+player.vx*lead,ay=player.y+player.vy*lead;
-    bot.aimJitter=mode==='hard'?(Math.random()-.5)*.08:(Math.random()-.5)*.20;
-    bot.targetAngle=Math.atan2(ay-bot.y,ax-bot.x)+bot.aimJitter;
+
+    bot.decision=
+      mode==='hard'
+        ? .18
+        : .34;
+
+
+    const lead=
+      mode==='hard'
+        ? .42
+        : .28;
+
+
+    let ax=
+      player.x+
+      player.vx*lead;
+
+    let ay=
+      player.y+
+      player.vy*lead;
+
+
+    bot.aimJitter=
+      mode==='hard'
+        ? (Math.random()-.5)*.08
+        : (Math.random()-.5)*.20;
+
+
+    bot.targetAngle=
+      Math.atan2(
+        ay-bot.y,
+        ax-bot.x
+      )+
+      bot.aimJitter;
   }
+
+
   bot.cool-=dt;
+
+
   if(bot.cool<=0){
-    fire(bot,bot.targetAngle||Math.atan2(player.y-bot.y,player.x-bot.x));
+
+    fire(
+      bot,
+      bot.targetAngle ||
+      Math.atan2(
+        player.y-bot.y,
+        player.x-bot.x
+      )
+    );
+
     bot.cool=2;
   }
 }
 
-player.vx=player.vy=0;
+
+/* =========================
+   PLAYER MOVEMENT
+   ========================= */
+
 function movePlayer(dt){
-  let x=(keys.d?1:0)-(keys.a?1:0),y=(keys.s?1:0)-(keys.w?1:0);
-  const l=Math.hypot(x,y)||1;
-  player.vx=x/l*player.speed;player.vy=y/l*player.speed;
-  player.x=clamp(player.x+player.vx*dt,arena.x+24,arena.x+arena.w()-24);
-  player.y=clamp(player.y+player.vy*dt,arena.y+24,arena.y+arena.h()-24);
-  player.cool=Math.max(0,player.cool-dt);
-  if(mouse.down)shootPlayer();
+
+  let x=
+    (keys.d?1:0)-
+    (keys.a?1:0);
+
+  let y=
+    (keys.s?1:0)-
+    (keys.w?1:0);
+
+  const l=
+    Math.hypot(x,y)||1;
+
+
+  if(x===0 && y===0){
+
+    player.vx=0;
+    player.vy=0;
+
+  }else{
+
+    player.vx=
+      x/l*player.speed;
+
+    player.vy=
+      y/l*player.speed;
+  }
+
+
+  player.x=clamp(
+    player.x+player.vx*dt,
+    arena.x+24,
+    arena.x+arena.w()-24
+  );
+
+  player.y=clamp(
+    player.y+player.vy*dt,
+    arena.y+24,
+    arena.y+arena.h()-24
+  );
+
+
+  player.cool=
+    Math.max(
+      0,
+      player.cool-dt
+    );
+
+
+  if(mouse.down){
+    shootPlayer();
+  }
 }
 
-function segmentCircleHit(x1,y1,x2,y2,cx,cy,r){
-  // Checks the entire path travelled this frame, not just the bullet's final position.
-  // This prevents fast bullets from visually tunneling straight through the bot.
-  const dx=x2-x1,dy=y2-y1;
-  const fx=x1-cx,fy=y1-cy;
-  const rr=r*r;
-  if(fx*fx+fy*fy<=rr)return true;
-  const len2=dx*dx+dy*dy;
-  if(len2===0)return false;
-  const t=clamp(-(fx*dx+fy*dy)/len2,0,1);
-  const px=x1+dx*t,py=y1+dy*t;
-  return (px-cx)*(px-cx)+(py-cy)*(py-cy)<=rr;
-}
+
+/* =========================
+   BULLETS
+   ========================= */
 
 function updateBullets(dt){
-  const bouncing=document.getElementById('bounceToggle').checked;
-  const L=arena.x+13,R=arena.x+arena.w()-13,T=arena.y+13,B=arena.y+arena.h()-13;
 
-  for(let i=bullets.length-1;i>=0;i--){
+  for(
+    let i=bullets.length-1;
+    i>=0;
+    i--
+  ){
+
     const b=bullets[i];
-    const oldX=b.x,oldY=b.y;
-    b.age+=dt;
 
-    // A tiny curved drift gives the rectangular shot a hand-animated feel.
-    const sp=Math.hypot(b.vx,b.vy)||1;
-    const nx=-b.vy/sp,ny=b.vx/sp;
-    b.vx+=nx*b.curve*dt;b.vy+=ny*b.curve*dt;
 
-    const nextX=b.x+b.vx*dt,nextY=b.y+b.vy*dt;
+    const sp=
+      Math.hypot(b.vx,b.vy)||1;
 
-    // For the first second, the bullet cannot kill its shooter.
-    // After that, every bullet is lethal to BOTH players, including its owner.
-    const targets=b.age>=1?[player,bot]:[b.owner===player?bot:player];
-    let hitTarget=null;
-    for(const target of targets){
-      if(segmentCircleHit(oldX,oldY,nextX,nextY,target.x,target.y,target.r+7)){
-        hitTarget=target;
-        break;
-      }
+    const nx=-b.vy/sp;
+    const ny=b.vx/sp;
+
+
+    b.vx+=nx*b.curve*dt;
+    b.vy+=ny*b.curve*dt;
+
+
+    b.x+=b.vx*dt;
+    b.y+=b.vy*dt;
+
+
+    b.rot=
+      Math.atan2(
+        b.vy,
+        b.vx
+      );
+
+
+    const L=arena.x+13;
+    const R=arena.x+arena.w()-13;
+    const T=arena.y+13;
+    const B=arena.y+arena.h()-13;
+
+
+    if(b.x<L){
+
+      b.x=L;
+      b.vx=Math.abs(b.vx);
+      b.curve*=-1;
+
+      burst(b.x,b.y);
     }
-    if(hitTarget){
-      hit(hitTarget,b.owner);bullets.splice(i,1);continue;
+
+
+    if(b.x>R){
+
+      b.x=R;
+      b.vx=-Math.abs(b.vx);
+      b.curve*=-1;
+
+      burst(b.x,b.y);
     }
 
-    b.x=nextX;b.y=nextY;b.rot=Math.atan2(b.vy,b.vx);
 
-    if(bouncing){
-      let guard=0;
-      while((b.x<L||b.x>R||b.y<T||b.y>B)&&guard++<8){
-        if(b.x<L){b.x=L+(L-b.x);b.vx=Math.abs(b.vx);b.curve*=-1;burst(b.x,b.y)}
-        else if(b.x>R){b.x=R-(b.x-R);b.vx=-Math.abs(b.vx);b.curve*=-1;burst(b.x,b.y)}
-        if(b.y<T){b.y=T+(T-b.y);b.vy=Math.abs(b.vy);b.curve*=-1;burst(b.x,b.y)}
-        else if(b.y>B){b.y=B-(b.y-B);b.vy=-Math.abs(b.vy);b.curve*=-1;burst(b.x,b.y)}
-      }
-    }else{
-      if(b.x<L||b.x>R||b.y<T||b.y>B)bullets.splice(i,1);
+    if(b.y<T){
+
+      b.y=T;
+      b.vy=Math.abs(b.vy);
+      b.curve*=-1;
+
+      burst(b.x,b.y);
+    }
+
+
+    if(b.y>B){
+
+      b.y=B;
+      b.vy=-Math.abs(b.vy);
+      b.curve*=-1;
+
+      burst(b.x,b.y);
+    }
+
+
+    const target=
+      b.owner===player
+        ? bot
+        : player;
+
+
+    if(
+      Math.hypot(
+        b.x-target.x,
+        b.y-target.y
+      )<
+      target.r+10
+    ){
+
+      hit(target,b.owner);
+
+      bullets.splice(i,1);
+
+      continue;
     }
   }
 }
+
+
+/* =========================
+   HIT
+   ========================= */
+
 function hit(target,shooter){
+
   if(gameOver)return;
-  gameOver=true;shake=12;
-  for(let i=0;i<22;i++)sparks.push({x:target.x,y:target.y,
-    vx:(Math.random()-.5)*500,vy:(Math.random()-.5)*500,life:.65});
-  // If a player's own bullet kills them, the result is still a loss for that player.
-  const winner = target===player ? bot : player;
-  document.getElementById('result').textContent=winner===player?'YOU WIN!':'BOT WINS!';
-  document.getElementById('resultSub').textContent=winner===player?'Nice shot!':'Ouch! You got hit by a bullet.';
+
+  gameOver=true;
+  shake=12;
+
+
+  for(let i=0;i<22;i++){
+
+    sparks.push({
+      x:target.x,
+      y:target.y,
+
+      vx:(Math.random()-.5)*500,
+      vy:(Math.random()-.5)*500,
+
+      life:.65
+    });
+  }
+
+
+  document.getElementById('result').textContent=
+    shooter===player
+      ? 'YOU WIN!'
+      : 'BOT WINS!';
+
+
+  document.getElementById('resultSub').textContent=
+    shooter===player
+      ? 'Nice shot!'
+      : 'Ouch! The bot got you.';
+
+
   document.getElementById('message').style.display='block';
 }
+
+
+/* =========================
+   PARTICLES
+   ========================= */
+
 function burst(x,y){
-  for(let i=0;i<5;i++)sparks.push({x,y,vx:(Math.random()-.5)*100,vy:(Math.random()-.5)*100,life:.25})
+
+  for(let i=0;i<5;i++){
+
+    sparks.push({
+      x,
+      y,
+
+      vx:(Math.random()-.5)*100,
+      vy:(Math.random()-.5)*100,
+
+      life:.25
+    });
+  }
 }
+
+
 function updateSparks(dt){
-  for(let i=sparks.length-1;i>=0;i--){let s=sparks[i];s.life-=dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.vx*=.96;s.vy*=.96;if(s.life<=0)sparks.splice(i,1)}
+
+  for(
+    let i=sparks.length-1;
+    i>=0;
+    i--
+  ){
+
+    let s=sparks[i];
+
+    s.life-=dt;
+
+    s.x+=s.vx*dt;
+    s.y+=s.vy*dt;
+
+    s.vx*=.96;
+    s.vy*=.96;
+
+
+    if(s.life<=0){
+      sparks.splice(i,1);
+    }
+  }
 }
+
+
+/* =========================
+   DRAWING
+   ========================= */
 
 function roundedRect(x,y,w,h,r){
-  ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()
+
+  ctx.beginPath();
+  ctx.roundRect(x,y,w,h,r);
+  ctx.fill();
 }
+
+
 function draw(){
+
   ctx.save();
-  if(shake>0){ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.86}
-  // warm paper-like background
-  ctx.fillStyle='#252b35';ctx.fillRect(0,0,W,H);
-  const ax=arena.x,ay=arena.y,aw=arena.w(),ah=arena.h();
-  // chunky arena shadow + outline
-  ctx.fillStyle='#11151c';roundedRect(ax+6,ay+6,aw,ah,18);
-  ctx.fillStyle='#303744';roundedRect(ax,ay,aw,ah,18);
-  ctx.lineWidth=4;ctx.strokeStyle='#11151c';ctx.stroke();
 
-  drawPlayer(player);drawPlayer(bot);
-  for(const b of bullets)drawBullet(b);
-  for(const s of sparks){ctx.globalAlpha=Math.max(0,s.life/.65);ctx.fillStyle='#d94b45';ctx.fillRect(s.x-3,s.y-3,6,6)}
+
+  if(shake>0){
+
+    ctx.translate(
+      (Math.random()-.5)*shake,
+      (Math.random()-.5)*shake
+    );
+
+    shake*=.86;
+  }
+
+
+  // Background
+
+  ctx.fillStyle='#252b35';
+  ctx.fillRect(0,0,W,H);
+
+
+  const ax=arena.x;
+  const ay=arena.y;
+  const aw=arena.w();
+  const ah=arena.h();
+
+
+  // Arena shadow
+
+  ctx.fillStyle='#11151c';
+
+  roundedRect(
+    ax+6,
+    ay+6,
+    aw,
+    ah,
+    18
+  );
+
+
+  // Arena
+
+  ctx.fillStyle='#303744';
+
+  roundedRect(
+    ax,
+    ay,
+    aw,
+    ah,
+    18
+  );
+
+
+  ctx.lineWidth=4;
+  ctx.strokeStyle='#11151c';
+
+  ctx.stroke();
+
+
+  // Players
+
+  drawPlayer(player);
+  drawPlayer(bot);
+
+
+  // Bullets
+
+  for(const b of bullets){
+    drawBullet(b);
+  }
+
+
+  // Sparks
+
+  for(const s of sparks){
+
+    ctx.globalAlpha=
+      Math.max(
+        0,
+        s.life/.65
+      );
+
+    ctx.fillStyle='#d94b45';
+
+    ctx.fillRect(
+      s.x-3,
+      s.y-3,
+      6,
+      6
+    );
+  }
+
+
   ctx.globalAlpha=1;
+
   ctx.restore();
 
-  // cooldown indicators
-  drawCooldown(player,20,H-58,'YOU');
-  drawCooldown(bot,W-120,H-58,'BOT');
+
+  // Cooldowns
+
+  if(gameStarted){
+
+    drawCooldown(
+      player,
+      20,
+      H-58,
+      'YOU'
+    );
+
+    drawCooldown(
+      bot,
+      W-120,
+      H-58,
+      'BOT'
+    );
+  }
 }
+
+
 function drawPlayer(p){
-  ctx.save();ctx.translate(p.x,p.y);
-  // offset shadow
-  ctx.fillStyle='#11151c';ctx.beginPath();ctx.ellipse(3,7,21,10,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(0,0,p.r,0,Math.PI*2);ctx.fill();
-  ctx.lineWidth=5;ctx.strokeStyle='#11151c';ctx.stroke();
+
+  ctx.save();
+
+  ctx.translate(
+    p.x,
+    p.y
+  );
+
+
+  // Shadow
+
+  ctx.fillStyle='#11151c';
+
+  ctx.beginPath();
+
+  ctx.ellipse(
+    3,
+    7,
+    21,
+    10,
+    0,
+    0,
+    Math.PI*2
+  );
+
+  ctx.fill();
+
+
+  // Player body
+
+  ctx.fillStyle=p.color;
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,
+    0,
+    p.r,
+    0,
+    Math.PI*2
+  );
+
+  ctx.fill();
+
+
+  ctx.lineWidth=5;
+  ctx.strokeStyle='#11151c';
+
+  ctx.stroke();
+
+
   ctx.restore();
 }
+
+
 function drawBullet(b){
-  ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.rot);
-  ctx.fillStyle='#11151c';roundedRect(-13,-7,28,14,6);
-  ctx.fillStyle='#d99a35';roundedRect(-10,-4,21,8,4);
-  // small trailing "cartoon streak"
-  ctx.globalAlpha=.25;ctx.fillStyle='#11151c';roundedRect(-24,-3,10,6,3);
-  ctx.restore()
+
+  ctx.save();
+
+  ctx.translate(
+    b.x,
+    b.y
+  );
+
+  ctx.rotate(b.rot);
+
+
+  ctx.fillStyle='#11151c';
+
+  roundedRect(
+    -13,
+    -7,
+    28,
+    14,
+    6
+  );
+
+
+  ctx.fillStyle='#d99a35';
+
+  roundedRect(
+    -10,
+    -4,
+    21,
+    8,
+    4
+  );
+
+
+  // Cartoon streak
+
+  ctx.globalAlpha=.25;
+  ctx.fillStyle='#11151c';
+
+  roundedRect(
+    -24,
+    -3,
+    10,
+    6,
+    3
+  );
+
+
+  ctx.restore();
 }
+
+
 function drawCooldown(p,x,y,label){
-  const ready=p.cool<=0;
-  ctx.fillStyle='#303744';ctx.strokeStyle='#11151c';ctx.lineWidth=3;
-  roundedRect(x,y,100,28,10);ctx.stroke();
-  ctx.fillStyle=ready?'#4f9f62':'#e95c4f';
-  const pct=ready?1:clamp(1-p.cool/2,0,1);
-  roundedRect(x+3,y+3,94*pct,22,7);
-  ctx.fillStyle='#11151c';ctx.font='900 12px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(label,x+50,y+14);
+
+  const ready=
+    p.cool<=0;
+
+
+  ctx.fillStyle='#303744';
+  ctx.strokeStyle='#11151c';
+  ctx.lineWidth=3;
+
+
+  roundedRect(
+    x,
+    y,
+    100,
+    28,
+    10
+  );
+
+  ctx.stroke();
+
+
+  ctx.fillStyle=
+    ready
+      ? '#4f9f62'
+      : '#e95c4f';
+
+
+  const pct=
+    ready
+      ? 1
+      : clamp(
+          1-p.cool/2,
+          0,
+          1
+        );
+
+
+  roundedRect(
+    x+3,
+    y+3,
+    94*pct,
+    22,
+    7
+  );
+
+
+  ctx.fillStyle='#11151c';
+
+  ctx.font='900 12px Arial';
+
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+
+
+  ctx.fillText(
+    label,
+    x+50,
+    y+14
+  );
 }
+
+
+/* =========================
+   GAME LOOP
+   ========================= */
+
 function loop(t){
-  const dt=Math.min(.033,(t-last)/1000);last=t;
-  if(!gameOver){movePlayer(dt);botAI(dt);updateBullets(dt)}
-  updateSparks(dt);draw();requestAnimationFrame(loop)
+
+  const dt=
+    Math.min(
+      .033,
+      (t-last)/1000
+    );
+
+  last=t;
+
+
+  if(
+    gameStarted &&
+    !gameOver &&
+    !paused
+  ){
+
+    movePlayer(dt);
+    botAI(dt);
+    updateBullets(dt);
+  }
+
+
+  if(!paused){
+
+    updateSparks(dt);
+  }
+
+
+  draw();
+
+  requestAnimationFrame(loop);
 }
-document.getElementById('normal').onclick=()=>{mode='normal';document.getElementById('normal').classList.add('active');document.getElementById('hard').classList.remove('active');reset()};
-document.getElementById('hard').onclick=()=>{mode='hard';document.getElementById('hard').classList.add('active');document.getElementById('normal').classList.remove('active');reset()};
-document.getElementById('restart').onclick=reset;
-reset();requestAnimationFrame(loop);
+
+
+/* =========================
+   BUTTONS
+   ========================= */
+
+// Main menu PLAY
+
+document.getElementById('playButton').onclick=()=>{
+  startGame();
+};
+
+
+// Pause
+
+document.getElementById('pauseButton').onclick=()=>{
+  togglePause();
+};
+
+
+// Resume
+
+document.getElementById('resumeButton').onclick=()=>{
+  togglePause();
+};
+
+
+// Main menu from pause
+
+document.getElementById('menuButton').onclick=()=>{
+  returnToMenu();
+};
+
+
+// Restart
+
+document.getElementById('restart').onclick=()=>{
+  reset();
+};
+
+
+// Normal mode
+
+document.getElementById('normal').onclick=()=>{
+
+  mode='normal';
+
+  document
+    .getElementById('normal')
+    .classList
+    .add('active');
+
+  document
+    .getElementById('hard')
+    .classList
+    .remove('active');
+
+  reset();
+};
+
+
+// Hard mode
+
+document.getElementById('hard').onclick=()=>{
+
+  mode='hard';
+
+  document
+    .getElementById('hard')
+    .classList
+    .add('active');
+
+  document
+    .getElementById('normal')
+    .classList
+    .remove('active');
+
+  reset();
+};
+
+
+/* =========================
+   INITIAL STATE
+   ========================= */
+
+// Start on the main menu.
+// The game itself does not begin until PLAY is pressed.
+
+document.getElementById('mainMenu').style.display='flex';
+document.getElementById('gameUI').style.display='none';
+
+requestAnimationFrame(loop);
+
 </script>
+
 </body>
 </html>
