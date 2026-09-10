@@ -616,8 +616,11 @@ document.getElementById("startMultiplayer").onclick=()=>{
 socket.on("gameStarted",data=>{
 
   multiplayer=true;
-
   gameOver=false;
+  mpRemoteVisual={};
+
+  const serverMe=data?.players?.[socket.id];
+  mpLocal=serverMe?{...serverMe}:null;
 
   showGame();
 });
@@ -635,6 +638,8 @@ socket.on("hostLeft",()=>{
 
   multiplayer=false;
   currentLobby=null;
+  mpLocal=null;
+  mpRemoteVisual={};
 
   alert("The host left. The server has been closed.");
 
@@ -1106,12 +1111,115 @@ let networkState={
   winner:null
 };
 
+// Multiplayer prediction/interpolation. The server uses a 1000x650 logical
+// arena; these helpers map it to the visible arena on any screen size.
+const MP_WORLD_W=1000;
+const MP_WORLD_H=650;
+const MP_PLAYER_R=19;
+const MP_PADDING=24;
+
+let mpLocal=null;
+let mpRemoteVisual={};
+let mpLastServerState=0;
+
+function screenToMP(x,y){
+  return {
+    x:(x-arena.x)/arena.w()*MP_WORLD_W,
+    y:(y-arena.y)/arena.h()*MP_WORLD_H
+  };
+}
+
+function mpToScreen(x,y){
+  return {
+    x:arena.x+x/MP_WORLD_W*arena.w(),
+    y:arena.y+y/MP_WORLD_H*arena.h()
+  };
+}
+
+function getMPBounds(){
+  return {
+    left:MP_PADDING+MP_PLAYER_R,
+    right:MP_WORLD_W-MP_PADDING-MP_PLAYER_R,
+    top:MP_PADDING+MP_PLAYER_R,
+    bottom:MP_WORLD_H-MP_PADDING-MP_PLAYER_R
+  };
+}
+
+function predictMPPlayer(dt){
+  if(!mpLocal)return;
+
+  let x=(keys.d?1:0)-(keys.a?1:0);
+  let y=(keys.s?1:0)-(keys.w?1:0);
+  const len=Math.hypot(x,y)||1;
+  const speed=255;
+
+  mpLocal.vx=x/len*speed;
+  mpLocal.vy=y/len*speed;
+
+  const b=getMPBounds();
+
+  mpLocal.x=clamp(mpLocal.x+mpLocal.vx*dt,b.left,b.right);
+  mpLocal.y=clamp(mpLocal.y+mpLocal.vy*dt,b.top,b.bottom);
+
+  mpLocal.aim=getMPAim();
+}
+
+function getMPAim(){
+  if(!mpLocal)return 0;
+  const m=screenToMP(mouse.x,mouse.y);
+  return Math.atan2(m.y-mpLocal.y,m.x-mpLocal.x);
+}
+
 socket.on("stateUpdated",state=>{
 
   networkState=state;
+  mpLastServerState=performance.now();
 
   if(state.status==="playing"){
     hideMessage();
+
+    const serverMe=state.players?.[socket.id];
+
+    if(serverMe){
+      if(!mpLocal){
+        mpLocal={...serverMe};
+      }else{
+        // Reconcile gently so prediction stays responsive while the server
+        // remains authoritative. Large corrections are snapped immediately.
+        const dx=serverMe.x-mpLocal.x;
+        const dy=serverMe.y-mpLocal.y;
+        const error=Math.hypot(dx,dy);
+
+        if(error>90){
+          mpLocal.x=serverMe.x;
+          mpLocal.y=serverMe.y;
+        }else{
+          mpLocal.x+=dx*0.45;
+          mpLocal.y+=dy*0.45;
+        }
+
+        mpLocal.vx=serverMe.vx;
+        mpLocal.vy=serverMe.vy;
+        mpLocal.cool=serverMe.cool;
+        mpLocal.r=serverMe.r;
+        mpLocal.color=serverMe.color;
+        mpLocal.aim=getMPAim();
+      }
+    }
+
+    for(const id of Object.keys(state.players||{})){
+      if(id===socket.id)continue;
+
+      const p=state.players[id];
+
+      if(!mpRemoteVisual[id]){
+        mpRemoteVisual[id]={...p};
+      }else{
+        mpRemoteVisual[id].targetX=p.x;
+        mpRemoteVisual[id].targetY=p.y;
+        mpRemoteVisual[id].target=p;
+      }
+    }
   }
 });
 
@@ -1141,21 +1249,13 @@ let lastInput=0;
 function sendInput(){
 
   if(!multiplayer)return;
-
   if(!socket.connected)return;
 
-  if(Date.now()-lastInput<30)return;
+  // Send often enough for responsive input, while the server keeps the last
+  // input between packets and simulates at 60 Hz.
+  if(performance.now()-lastInput<20)return;
 
-  lastInput=Date.now();
-
-  const me=networkState.players[socket.id];
-
-  if(!me)return;
-
-  const aim=Math.atan2(
-    mouse.y-me.y,
-    mouse.x-me.x
-  );
+  lastInput=performance.now();
 
   socket.emit("input",{
     keys:{
@@ -1164,7 +1264,7 @@ function sendInput(){
       s:!!keys.s,
       d:!!keys.d
     },
-    aim,
+    aim:getMPAim(),
     shooting:mouse.down
   });
 }
@@ -1371,39 +1471,50 @@ function drawMultiplayer(){
 
   drawArena();
 
-  const players=
-    networkState.players||{};
-
+  const players=networkState.players||{};
   const ids=Object.keys(players);
 
   for(const id of ids){
 
-    const p=players[id];
-
-    drawPlayer(p);
+    let p;
 
     if(id===socket.id){
-
-      drawCooldown(
-        p,
-        20,
-        H-58,
-        "YOU"
-      );
-
+      p=mpLocal||players[id];
     }else{
+      const v=mpRemoteVisual[id];
 
-      drawCooldown(
-        p,
-        W-120,
-        H-58,
-        "OPP"
-      );
+      if(v){
+        if(typeof v.targetX==="number"){
+          // Smoothly catch up to the newest server snapshot.
+          const sx=v.x+(v.targetX-v.x)*0.30;
+          const sy=v.y+(v.targetY-v.y)*0.30;
+          Object.assign(v,v.target);
+          v.x=sx;
+          v.y=sy;
+        }
+        p=v;
+      }else{
+        p=players[id];
+      }
+    }
+
+    if(!p)continue;
+
+    const screen=mpToScreen(p.x,p.y);
+    const drawP={...p,x:screen.x,y:screen.y};
+
+    drawPlayer(drawP);
+
+    if(id===socket.id){
+      drawCooldown(p,20,H-58,"YOU");
+    }else{
+      drawCooldown(p,W-120,H-58,"OPP");
     }
   }
 
   for(const b of networkState.bullets||[]){
-    drawBullet(b);
+    const screen=mpToScreen(b.x,b.y);
+    drawBullet({...b,x:screen.x,y:screen.y});
   }
 }
 
@@ -1480,6 +1591,8 @@ document.getElementById("gameMenu").onclick=()=>{
 
     multiplayer=false;
     currentLobby=null;
+    mpLocal=null;
+    mpRemoteVisual={};
   }
 
   hideMessage();
@@ -1505,8 +1618,9 @@ function loop(now){
 
   if(multiplayer){
 
+    // Local prediction runs every animation frame, so WASD feels immediate.
+    predictMPPlayer(dt);
     sendInput();
-
     drawMultiplayer();
 
   }else{
