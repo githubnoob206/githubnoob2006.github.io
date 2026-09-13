@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BOUNCE! — Cartoon Duel</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#252b35}
+  body{font-family:Arial Black,Impact,sans-serif}
+  canvas{display:block;width:100vw;height:100vh;cursor:crosshair}
+  #ui{
+    position:fixed;inset:0;pointer-events:none;
+    color:#f4ead2;text-shadow:2px 2px 0 #11151c;
+  }
+  #title{
+    position:absolute;left:50%;top:18px;transform:translateX(-50%) rotate(-1deg);
+    font-size:clamp(28px,4vw,52px);letter-spacing:3px;
+  }
+  #help{
+    position:absolute;left:50%;bottom:18px;transform:translateX(-50%);
+    font-family:Arial,sans-serif;font-weight:900;font-size:13px;
+    background:#303744;border:3px solid #11151c;border-radius:14px;padding:8px 14px;
+    display:none;white-space:nowrap;
+  }
+  #pauseBtn{
+    position:absolute;left:20px;top:18px;pointer-events:auto;
+    width:44px;height:44px;display:none;align-items:center;justify-content:center;
+    background:#303744;border:3px solid #11151c;border-radius:12px;cursor:pointer;
+    box-shadow:3px 3px 0 #17212b;
+  }
+  #pauseBtn:active{transform:translateY(2px);box-shadow:1px 1px 0 #17212b}
+
+  .panel{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    text-align:center;display:none;pointer-events:auto;
+    background:#303744;border:5px solid #17212b;border-radius:24px;
+    padding:26px 34px;box-shadow:8px 8px 0 #17212b;color:#f4ead2;
+  }
+  .panel h1{margin:0 0 6px;font-size:clamp(30px,6vw,56px);letter-spacing:2px}
+  .panel p.sub{margin:0 0 18px;font-family:Arial,sans-serif;font-weight:900;font-size:13px;opacity:.8}
+  .menuBtn{
+    display:block;width:100%;margin:8px 0;border:3px solid #11151c;border-radius:12px;
+    color:#f4ead2;padding:12px 22px;font:900 16px Arial;cursor:pointer;
+  }
+  .menuBtn:active{transform:translateY(2px)}
+  .menuBtn.primary{background:#d94b45}
+  .menuBtn.secondary{background:#3b78d8}
+  .menuBtn.neutral{background:#4a5568}
+  .menuBtn:disabled{opacity:.5;cursor:default}
+  .menuBtn:disabled:active{transform:none}
+
+  #settingsPanel{
+    width:min(480px,90vw);max-height:82vh;overflow-y:auto;text-align:left;
+  }
+  #settingsPanel h1{text-align:center}
+  #settingsPanel::-webkit-scrollbar{width:10px}
+  #settingsPanel::-webkit-scrollbar-thumb{background:#4a5568;border-radius:6px}
+
+  .setting-group{
+    margin-top:16px;padding-top:10px;border-top:2px solid #3a4352;
+    font-family:Arial,sans-serif;font-weight:900;font-size:11px;
+    letter-spacing:1.5px;text-transform:uppercase;opacity:.6;
+  }
+  .setting-group:first-of-type{border-top:none;margin-top:0;padding-top:0}
+  .setting-row{
+    display:flex;align-items:center;gap:10px;margin:10px 0;
+    font-family:Arial,sans-serif;font-weight:900;font-size:13px;
+  }
+  .setting-row label{flex:0 0 148px}
+  .setting-row input[type=range]{flex:1;accent-color:#d94b45}
+  .setting-row input[type=text]{
+    flex:1;padding:8px 10px;border-radius:8px;border:2px solid #11151c;
+    font:900 13px Arial;background:#f4ead2;color:#11151c;
+  }
+  .setting-value{width:52px;text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+  .setting-toggle-row{
+    display:flex;align-items:center;justify-content:space-between;margin:12px 0;
+    font-family:Arial,sans-serif;font-weight:900;font-size:13px;
+  }
+  .setting-toggle-row input{width:18px;height:18px;accent-color:#d94b45}
+  #settingsBtnRow{display:flex;gap:10px;margin-top:18px}
+  #settingsBtnRow .menuBtn{margin:0}
+
+  #mpMenu,#mpWaiting{width:min(440px,90vw)}
+  #mpStatus{font-family:Arial,sans-serif;font-weight:900;font-size:12px;opacity:.75;margin-bottom:10px;min-height:16px}
+  #lobbyList{max-height:230px;overflow-y:auto;margin-bottom:14px;text-align:left}
+  #lobbyList::-webkit-scrollbar{width:10px}
+  #lobbyList::-webkit-scrollbar-thumb{background:#4a5568;border-radius:6px}
+  .lobbyRow{
+    display:flex;align-items:center;gap:8px;background:#252b35;border:2px solid #11151c;
+    border-radius:10px;padding:8px 10px;margin-bottom:8px;font-family:Arial,sans-serif;font-weight:900;font-size:13px;
+  }
+  .lobbyRow .lobbyInfo{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lobbyRow .lobbySub{opacity:.6;font-size:11px;font-weight:700;margin-top:2px}
+  .lobbyRow button{width:auto;margin:0;padding:8px 14px;flex:0 0 auto;font-size:13px}
+  .emptyLobbies{font-family:Arial,sans-serif;font-weight:900;font-size:12px;opacity:.6;padding:10px 4px}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="title">BOUNCE!</div>
+
+  <div id="pauseBtn" title="Pause">
+    <svg viewBox="0 0 24 24" fill="#f4ead2"><rect x="5" y="4" width="5" height="16" rx="1.5"/><rect x="14" y="4" width="5" height="16" rx="1.5"/></svg>
+  </div>
+
+  <div id="help">W A S D to move • Mouse to aim • Click to shoot • ESC to pause</div>
+
+  <div id="mainMenu" class="panel">
+    <h1>BOUNCE!</h1>
+    <p class="sub">A cartoon bullet duel</p>
+    <button class="menuBtn primary" id="btnPlay">PLAY VS BOT</button>
+    <button class="menuBtn secondary" id="btnMultiplayer">MULTIPLAYER</button>
+    <button class="menuBtn neutral" id="btnMenuSettings">SETTINGS</button>
+  </div>
+
+  <div id="mpMenu" class="panel">
+    <h1>MULTIPLAYER</h1>
+    <div class="setting-row">
+      <label for="mpName">Your Name</label>
+      <input id="mpName" type="text" maxlength="16">
+    </div>
+    <div id="mpStatus"></div>
+    <div id="lobbyList"></div>
+    <button class="menuBtn primary" id="btnCreateLobby">CREATE LOBBY</button>
+    <button class="menuBtn secondary" id="btnRefreshLobbies">REFRESH LIST</button>
+    <button class="menuBtn neutral" id="btnMpBack">BACK</button>
+  </div>
+
+  <div id="mpWaiting" class="panel">
+    <h1 id="mpWaitTitle">LOBBY</h1>
+    <p class="sub" id="mpWaitSub">Waiting for an opponent to join…</p>
+    <button class="menuBtn primary" id="btnMpStart" style="display:none">START GAME</button>
+    <button class="menuBtn neutral" id="btnMpCancel">LEAVE LOBBY</button>
+  </div>
+
+  <div id="pauseMenu" class="panel">
+    <h1>PAUSED</h1>
+    <button class="menuBtn primary" id="btnResume">RESUME</button>
+    <button class="menuBtn secondary" id="btnPauseSettings">SETTINGS</button>
+    <button class="menuBtn neutral" id="btnPauseMainMenu">MAIN MENU</button>
+  </div>
+
+  <div id="message" class="panel">
+    <h1 id="result"></h1>
+    <p class="sub" id="resultSub"></p>
+    <p class="sub" id="mpGuestWaitMsg" style="display:none">Waiting for the host to start a new round…</p>
+    <button class="menuBtn primary" id="restart">PLAY AGAIN</button>
+    <button class="menuBtn neutral" id="btnOverMainMenu">MAIN MENU</button>
+  </div>
+
+  <div id="settingsPanel" class="panel">
+    <h1>SETTINGS</h1>
+
+    <div class="setting-group">Movement</div>
+    <div class="setting-row">
+      <label for="setPlayerSpeed">Your Speed</label>
+      <input id="setPlayerSpeed" type="range" min="30" max="1500" step="5">
+      <span class="setting-value" id="valPlayerSpeed"></span>
+    </div>
+    <div class="setting-row">
+      <label for="setBotSpeed">Bot Speed</label>
+      <input id="setBotSpeed" type="range" min="30" max="900" step="5">
+      <span class="setting-value" id="valBotSpeed"></span>
+    </div>
+
+    <div class="setting-group">Combat</div>
+    <div class="setting-row">
+      <label for="setPlayerCooldown">Your Cooldown</label>
+      <input id="setPlayerCooldown" type="range" min="0.02" max="4" step="0.1">
+      <span class="setting-value" id="valPlayerCooldown"></span>
+    </div>
+    <div class="setting-row">
+      <label for="setBotCooldown">Bot Cooldown</label>
+      <input id="setBotCooldown" type="range" min="0.02" max="4" step="0.1">
+      <span class="setting-value" id="valBotCooldown"></span>
+    </div>
+    <div class="setting-row">
+      <label for="setBulletSpeed">Bullet Speed</label>
+      <input id="setBulletSpeed" type="range" min="10" max="4000" step="5">
+      <span class="setting-value" id="valBulletSpeed"></span>
+    </div>
+    <div class="setting-row">
+      <label for="setBulletCurve">Bullet Wobble</label>
+      <input id="setBulletCurve" type="range" min="0" max="30" step="1">
+      <span class="setting-value" id="valBulletCurve"></span>
+    </div>
+    <div class="setting-row">
+      <label for="setSelfHitDelay">Self-Hit Delay</label>
+      <input id="setSelfHitDelay" type="range" min="0" max="3" step="0.1">
+      <span class="setting-value" id="valSelfHitDelay"></span>
+    </div>
+    <div class="setting-toggle-row">
+      <label for="setBounce">Bullets Bounce Off Walls</label>
+      <input id="setBounce" type="checkbox">
+    </div>
+
+    <div class="setting-group">Sizes</div>
+    <div class="setting-row">
+      <label for="setPlayerSize">Your Size</label>
+      <input id="setPlayerSize" type="range" min="12" max="32" step="1">
+      <span class="setting-value" id="valPlayerSize"></span>
+    </div>
+    <div class="setting-row">
+      <label for="setBotSize">Bot Size</label>
+      <input id="setBotSize" type="range" min="12" max="32" step="1">
+      <span class="setting-value" id="valBotSize"></span>
+    </div>
+
+    <div class="setting-group">Bot Difficulty (vs Bot mode only)</div>
+    <div class="setting-row">
+      <label for="setBotAccuracy">Bot Aim Accuracy</label>
+      <input id="setBotAccuracy" type="range" min="0" max="100" step="1">
+      <span class="setting-value" id="valBotAccuracy"></span>
+    </div>
+    <div class="setting-row">
+      <label for="setBotReaction">Bot Reaction Speed</label>
+      <input id="setBotReaction" type="range" min="50" max="150" step="5">
+      <span class="setting-value" id="valBotReaction"></span>
+    </div>
+
+    <div class="setting-group">Visuals</div>
+    <div class="setting-toggle-row">
+      <label for="setScreenShake">Screen Shake</label>
+      <input id="setScreenShake" type="checkbox">
+    </div>
+
+    <div id="settingsBtnRow">
+      <button class="menuBtn neutral" id="btnResetDefaults">RESET DEFAULTS</button>
+      <button class="menuBtn primary" id="btnSettingsBack">BACK</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://bounce-multiplayer-server.onrender.com/socket.io/socket.io.js"></script>
+<script>
+// =======================================================================
+// CONFIG
+// =======================================================================
+const SERVER_URL='https://bounce-multiplayer-server.onrender.com';
+// Fixed logical arena size used ONLY for multiplayer. Locking the aspect
+// ratio here means host and guest always agree on where the walls are,
+// regardless of each person's own window size/shape.
+const MP_W=1280, MP_H=720;
+
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+let W,H,dpr;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+  canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);refreshArena()}
+addEventListener('resize',resize);
+
+// ---------------------------------------------------------------------
+// Sound effects (button.wav, death.wav, victory.wav, shoot.wav — same folder)
+// ---------------------------------------------------------------------
+const soundFiles={button:'button.wav',death:'death.wav',victory:'victory.wav',shoot:'shoot.wav'};
+const sounds={};
+for(const key in soundFiles){
+  const a=new Audio(soundFiles[key]);
+  a.preload='auto';
+  sounds[key]=a;
+}
+function playSound(name,rate){
+  const base=sounds[name];
+  if(!base)return;
+  const s=base.cloneNode();
+  s.volume=base.volume;
+  s.playbackRate=rate||1;
+  s.play().catch(()=>{});
+}
+
+const keys={};
+addEventListener('keydown',e=>{
+  keys[e.key.toLowerCase()]=true;
+  if(e.key==='Escape'||e.key.toLowerCase()==='p'){
+    if(mode==='mp'){
+      if(gameState==='playing'||gameState==='mpWaiting'||gameState==='over'){
+        if(confirm('Leave the match?')) leaveMpMatch();
+      }
+    }else if(gameState==='playing')pauseGame();
+    else if(gameState==='paused')resumeGame();
+  }
+});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
+
+const mouse={x:W/2,y:H/2,down:false};
+canvas.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+canvas.addEventListener('mousedown',e=>{
+  if(e.button===0){
+    mouse.down=true;
+    // Guests never fire locally — their click is just part of the input
+    // stream sent to the host, who is the only one allowed to spawn bullets.
+    if(!(mode==='mp'&&role==='guest')) shootPlayer();
+  }
+});
+addEventListener('mouseup',e=>{if(e.button===0)mouse.down=false});
+
+// ---------------------------------------------------------------------
+// Settings
+// ---------------------------------------------------------------------
+const DEFAULTS={
+  playerSpeed:255, botSpeed:225,
+  playerCooldown:2, botCooldown:2,
+  bulletSpeed:285, bulletCurve:8, selfHitDelay:1, bounce:true,
+  playerSize:19, botSize:19,
+  botAccuracy:92, botReaction:100,
+  screenShake:true
+};
+const settings=Object.assign({},DEFAULTS);
+
+let gameState='menu'; // 'menu'|'mpMenu'|'mpWaiting'|'settings'|'playing'|'paused'|'over'
+let settingsReturnTo='menu';
+let last=performance.now(),shake=0;
+let mode='bot';   // 'bot' | 'mp'
+let role=null;    // 'host' | 'guest' (only meaningful when mode==='mp')
+
+function soloArenaCalc(){ return {x:35,y:92,w:()=>W-70,h:()=>H-142}; }
+function mpArenaCalc(){
+  const availW=W-70, availH=H-142;
+  const scale=Math.min(availW/MP_W, availH/MP_H);
+  const w=MP_W*scale, h=MP_H*scale;
+  const x=(W-w)/2, y=92+(availH-h)/2;
+  return {x,y,w:()=>w,h:()=>h};
+}
+let arena=soloArenaCalc();
+function refreshArena(){ arena = (mode==='mp') ? mpArenaCalc() : soloArenaCalc(); }
+
+const player={x:0,y:0,r:settings.playerSize,speed:settings.playerSpeed,cool:0,vx:0,vy:0,color:'#ef5549',name:'YOU'};
+const bot={x:0,y:0,r:settings.botSize,speed:settings.botSpeed,cool:0,color:'#3b78d8',name:'BOT',
+  vx:0,vy:0,decision:0,aimJitter:0,targetAngle:0};
+
+let bullets=[],sparks=[],dust=[];
+let bulletIdCounter=1;
+
+function reset(){
+  player.x=arena.x+arena.w()*.25; player.y=arena.y+arena.h()*.5; player.cool=0;
+  bot.x=arena.x+arena.w()*.75; bot.y=arena.y+arena.h()*.5; bot.cool=.8;
+  bot.vx=bot.vy=0;bot.decision=0;bot.aimJitter=0;
+  bullets=[];sparks=[];dust=[];
+}
+function startGame(){
+  reset();
+  gameState='playing';
+  updateOverlays();
+}
+function pauseGame(){ gameState='paused'; updateOverlays(); }
+function resumeGame(){ gameState='playing'; updateOverlays(); }
+
+function updateOverlays(){
+  document.getElementById('title').style.display = gameState==='menu' ? 'none':'block';
+  document.getElementById('mainMenu').style.display = gameState==='menu' ? 'block':'none';
+  document.getElementById('mpMenu').style.display = gameState==='mpMenu' ? 'block':'none';
+  document.getElementById('mpWaiting').style.display = gameState==='mpWaiting' ? 'block':'none';
+  document.getElementById('pauseMenu').style.display = gameState==='paused' ? 'block':'none';
+  document.getElementById('settingsPanel').style.display = gameState==='settings' ? 'block':'none';
+  document.getElementById('message').style.display = gameState==='over' ? 'block':'none';
+  document.getElementById('pauseBtn').style.display = (gameState==='playing'&&mode!=='mp') ? 'flex':'none';
+  document.getElementById('help').style.display = (gameState==='playing'||gameState==='paused') ? 'block':'none';
+  document.getElementById('help').textContent = mode==='mp'
+    ? 'W A S D to move • Mouse to aim • Click to shoot • ESC to leave match'
+    : 'W A S D to move • Mouse to aim • Click to shoot • ESC to pause';
+  updateMpOverPanel();
+}
+function updateMpOverPanel(){
+  const isGuest = mode==='mp' && role==='guest';
+  document.getElementById('restart').style.display = isGuest ? 'none':'block';
+  document.getElementById('mpGuestWaitMsg').style.display = isGuest ? 'block':'none';
+}
+
+function shootPlayer(){
+  if(gameState!=='playing'||player.cool>0)return;
+  fire(player,Math.atan2(mouse.y-player.y,mouse.x-player.x));
+}
+function fire(shooter,angle){
+  playSound('shoot');
+  shooter.cool = shooter===player ? settings.playerCooldown : settings.botCooldown;
+  const speed=Math.max(1,settings.bulletSpeed);
+  bullets.push({
+    id:bulletIdCounter++,
+    x:shooter.x+Math.cos(angle)*23,y:shooter.y+Math.sin(angle)*23,
+    vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
+    owner:shooter,age:0,curve:(Math.random()-.5)*settings.bulletCurve,
+    rot:angle
+  });
+}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+function botAI(dt){
+  const left=arena.x+bot.r+5,right=arena.x+arena.w()-bot.r-5,top=arena.y+bot.r+5,bottom=arena.y+arena.h()-bot.r-5;
+  const reactionMult=settings.botReaction/100;
+  let dangerX=0,dangerY=0,minT=Infinity;
+
+  for(const b of bullets){
+    if(b.owner===bot && b.age<settings.selfHitDelay) continue;
+
+    let px=b.x,py=b.y,vx=b.vx,vy=b.vy;
+    const lookAhead=2.8*reactionMult;
+    const steps=Math.ceil(lookAhead/0.035);
+    let hitT=Infinity,closestD=Infinity,closestDX=0,closestDY=0;
+
+    for(let step=1;step<=steps;step++){
+      const simDt=0.035;
+      const sp=Math.hypot(vx,vy)||1;
+      const nx=-vy/sp,ny=vx/sp;
+      vx+=nx*b.curve*simDt;
+      vy+=ny*b.curve*simDt;
+
+      let nxp=px+vx*simDt,nyp=py+vy*simDt;
+
+      if(settings.bounce){
+        const L=arena.x+13,R=arena.x+arena.w()-13,T=arena.y+13,B=arena.y+arena.h()-13;
+        if(nxp<L){nxp=L+(L-nxp);vx=Math.abs(vx)}
+        else if(nxp>R){nxp=R-(nxp-R);vx=-Math.abs(vx)}
+        if(nyp<T){nyp=T+(T-nyp);vy=Math.abs(vy)}
+        else if(nyp>B){nyp=B-(nyp-B);vy=-Math.abs(vy)}
+      }
+
+      const t=step*simDt;
+      const ddx=bot.x-nxp,ddy=bot.y-nyp;
+      const d=Math.hypot(ddx,ddy);
+
+      if(d<closestD){closestD=d;closestDX=ddx;closestDY=ddy}
+
+      if(d<72){
+        hitT=t;
+        break;
+      }
+
+      px=nxp;py=nyp;
+    }
+
+    if(hitT<minT){
+      minT=hitT;
+      dangerX=closestDX;
+      dangerY=closestDY;
+
+      const len=Math.hypot(dangerX,dangerY)||1;
+      dangerX/=len; dangerY/=len;
+      if(Math.abs(dangerX)+Math.abs(dangerY)<0.15){
+        dangerX=-vy; dangerY=vx;
+      }
+    }
+  }
+
+  const repelMargin=150;
+  let wallX=0,wallY=0;
+  if(bot.x-arena.x<repelMargin) wallX+=(repelMargin-(bot.x-arena.x));
+  if((arena.x+arena.w())-bot.x<repelMargin) wallX-=(repelMargin-((arena.x+arena.w())-bot.x));
+  if(bot.y-arena.y<repelMargin) wallY+=(repelMargin-(bot.y-arena.y));
+  if((arena.y+arena.h())-bot.y<repelMargin) wallY-=(repelMargin-((arena.y+arena.h())-bot.y));
+
+  let tx=bot.x,ty=bot.y,speedMult=1;
+  const dodgeThreshold=1.8*reactionMult;
+
+  if(minT<dodgeThreshold){
+    const len=Math.hypot(dangerX,dangerY)||1;
+    const px=dangerX/len,py=dangerY/len;
+
+    tx+=px*170;
+    ty+=py*170;
+
+    const side=135;
+    const sign=(Math.sin(performance.now()/180)+1)>1 ? 1 : -1;
+    tx+=-py*side*sign;
+    ty+= px*side*sign;
+
+    tx+=wallX*0.8; ty+=wallY*0.8;
+    speedMult=1.35;
+  }else{
+    const iAmReloading=bot.cool>0.15;
+    const playerReadySoon=player.cool<0.4;
+
+    let desiredDist;
+    if(iAmReloading&&playerReadySoon){
+      desiredDist=280;
+    }else if(!iAmReloading){
+      desiredDist=210;
+    }else{
+      desiredDist=140;
+    }
+
+    const ddx=bot.x-player.x,ddy=bot.y-player.y;
+    const distToPlayer=Math.hypot(ddx,ddy)||1;
+    const awayX=ddx/distToPlayer,awayY=ddy/distToPlayer;
+
+    const tangentSign=Math.sin(performance.now()/1400)>=0?1:-1;
+    const tanX=-awayY*tangentSign,tanY=awayX*tangentSign;
+
+    const distError=distToPlayer-desiredDist;
+    const approach=clamp(distError/140,-1,1);
+
+    let dirX=-awayX*approach+tanX*0.7+wallX*0.03;
+    let dirY=-awayY*approach+tanY*0.7+wallY*0.03;
+    const dl=Math.hypot(dirX,dirY)||1;
+    dirX/=dl;dirY/=dl;
+
+    tx=bot.x+dirX*160;
+    ty=bot.y+dirY*160;
+    speedMult=Math.abs(approach)>0.6?1.15:1;
+  }
+
+  tx=clamp(tx,left,right);ty=clamp(ty,top,bottom);
+  let dx=tx-bot.x,dy=ty-bot.y,l=Math.hypot(dx,dy)||1;
+  let desiredX=dx/l*speedMult,desiredY=dy/l*speedMult;
+
+  bot.vx += (desiredX*bot.speed-bot.vx)*Math.min(1,dt*7*reactionMult);
+  bot.vy += (desiredY*bot.speed-bot.vy)*Math.min(1,dt*7*reactionMult);
+  const vl=Math.hypot(bot.vx,bot.vy);
+  const capSpeed=bot.speed*speedMult;
+  if(vl>capSpeed){bot.vx=bot.vx/vl*capSpeed;bot.vy=bot.vy/vl*capSpeed}
+  bot.x=clamp(bot.x+bot.vx*dt,left,right);
+  bot.y=clamp(bot.y+bot.vy*dt,top,bottom);
+
+  bot.decision-=dt;
+  if(bot.decision<=0){
+    bot.decision=.12/reactionMult;
+    const distNow=Math.hypot(player.x-bot.x,player.y-bot.y);
+    const leadTime=clamp(distNow/Math.max(1,settings.bulletSpeed),0,1.1);
+    let ax=player.x+player.vx*leadTime,ay=player.y+player.vy*leadTime;
+    const jitterSpread=(1-settings.botAccuracy/100)*0.5;
+    bot.aimJitter=(Math.random()-.5)*jitterSpread;
+    bot.targetAngle=Math.atan2(ay-bot.y,ax-bot.x)+bot.aimJitter;
+  }
+  bot.cool-=dt;
+  if(bot.cool<=0){
+    fire(bot,bot.targetAngle||Math.atan2(player.y-bot.y,player.x-bot.x));
+  }
+}
+
+// ---------------------------------------------------------------------
+// Movement
+// ---------------------------------------------------------------------
+function movePlayer(dt){
+  let x=(keys.d?1:0)-(keys.a?1:0),y=(keys.s?1:0)-(keys.w?1:0);
+  const l=Math.hypot(x,y)||1;
+  player.vx=x/l*player.speed;player.vy=y/l*player.speed;
+  player.x=clamp(player.x+player.vx*dt,arena.x+player.r+5,arena.x+arena.w()-player.r-5);
+  player.y=clamp(player.y+player.vy*dt,arena.y+player.r+5,arena.y+arena.h()-player.r-5);
+  player.cool=Math.max(0,player.cool-dt);
+  if(mouse.down)shootPlayer();
+}
+
+// Host uses this to drive the guest's on-screen avatar from their latest
+// input packet. Same movement math as movePlayer, just fed by network
+// input instead of local keys.
+let remoteInput={up:false,down:false,left:false,right:false,angle:0,shoot:false};
+function applyOpponentInput(dt){
+  const inp=remoteInput;
+  let x=(inp.right?1:0)-(inp.left?1:0), y=(inp.down?1:0)-(inp.up?1:0);
+  const l=Math.hypot(x,y)||1;
+  bot.vx=x/l*bot.speed; bot.vy=y/l*bot.speed;
+  bot.x=clamp(bot.x+bot.vx*dt, arena.x+bot.r+5, arena.x+arena.w()-bot.r-5);
+  bot.y=clamp(bot.y+bot.vy*dt, arena.y+bot.r+5, arena.y+arena.h()-bot.r-5);
+  bot.cool=Math.max(0,bot.cool-dt);
+  if(inp.shoot && bot.cool<=0){
+    fire(bot, inp.angle);
+  }
+}
+
+// Guest's own local prediction: moves immediately on keypress so it feels
+// like a normal 60fps game, then gets gently corrected each time an
+// authoritative snapshot arrives from the host (see applyGuestFrame).
+function movePlayerLocal(dt){
+  let x=(keys.d?1:0)-(keys.a?1:0),y=(keys.s?1:0)-(keys.w?1:0);
+  const l=Math.hypot(x,y)||1;
+  player.vx=x/l*player.speed;player.vy=y/l*player.speed;
+  player.x=clamp(player.x+player.vx*dt,arena.x+player.r+5,arena.x+arena.w()-player.r-5);
+  player.y=clamp(player.y+player.vy*dt,arena.y+player.r+5,arena.y+arena.h()-player.r-5);
+}
+
+function segmentCircleHit(x1,y1,x2,y2,cx,cy,r){
+  const dx=x2-x1,dy=y2-y1;
+  const fx=x1-cx,fy=y1-cy;
+  const rr=r*r;
+  if(fx*fx+fy*fy<=rr)return true;
+  const len2=dx*dx+dy*dy;
+  if(len2===0)return false;
+  const t=clamp(-(fx*dx+fy*dy)/len2,0,1);
+  const px=x1+dx*t,py=y1+dy*t;
+  return (px-cx)*(px-cx)+(py-cy)*(py-cy)<=rr;
+}
+
+function updateBullets(dt){
+  const bouncing=settings.bounce;
+  const L=arena.x+13,R=arena.x+arena.w()-13,T=arena.y+13,B=arena.y+arena.h()-13;
+
+  for(let i=bullets.length-1;i>=0;i--){
+    const b=bullets[i];
+    const oldX=b.x,oldY=b.y;
+    b.age+=dt;
+
+    const sp=Math.hypot(b.vx,b.vy)||1;
+    const nx=-b.vy/sp,ny=b.vx/sp;
+    b.vx+=nx*b.curve*dt;b.vy+=ny*b.curve*dt;
+
+    const nextX=b.x+b.vx*dt,nextY=b.y+b.vy*dt;
+
+    const targets=b.age>=settings.selfHitDelay?[player,bot]:[b.owner===player?bot:player];
+    let hitTarget=null;
+    for(const target of targets){
+      if(segmentCircleHit(oldX,oldY,nextX,nextY,target.x,target.y,target.r+7)){
+        hitTarget=target;
+        break;
+      }
+    }
+    if(hitTarget){
+      hit(hitTarget,b.owner);bullets.splice(i,1);continue;
+    }
+
+    b.x=nextX;b.y=nextY;b.rot=Math.atan2(b.vy,b.vx);
+
+    if(bouncing){
+      let guard=0;
+      while((b.x<L||b.x>R||b.y<T||b.y>B)&&guard++<8){
+        if(b.x<L){b.x=L+(L-b.x);b.vx=Math.abs(b.vx);b.curve*=-1;burst(b.x,b.y)}
+        else if(b.x>R){b.x=R-(b.x-R);b.vx=-Math.abs(b.vx);b.curve*=-1;burst(b.x,b.y)}
+        if(b.y<T){b.y=T+(T-b.y);b.vy=Math.abs(b.vy);b.curve*=-1;burst(b.x,b.y)}
+        else if(b.y>B){b.y=B-(b.y-B);b.vy=-Math.abs(b.vy);b.curve*=-1;burst(b.x,b.y)}
+      }
+    }else{
+      if(b.x<L||b.x>R||b.y<T||b.y>B)bullets.splice(i,1);
+    }
+  }
+}
+
+// Visual-only integration used by the GUEST to keep bullets moving smoothly
+// at 60fps between the ~network-rate snapshots from the host. No collision
+// or wall-bounce here — the host is the sole authority on hits and bounces;
+// this just interpolates the path so it doesn't look choppy.
+function extrapolateBulletsVisual(dt){
+  for(const b of bullets){
+    const sp=Math.hypot(b.vx,b.vy)||1;
+    const nx=-b.vy/sp,ny=b.vx/sp;
+    b.vx+=nx*b.curve*dt;b.vy+=ny*b.curve*dt;
+    b.x+=b.vx*dt;b.y+=b.vy*dt;
+    b.rot=Math.atan2(b.vy,b.vx);
+  }
+}
+
+function hit(target,shooter){
+  if(gameState!=='playing')return;
+  gameState='over'; updateOverlays();
+  if(settings.screenShake) shake=12;
+  for(let i=0;i<22;i++)sparks.push({x:target.x,y:target.y,
+    vx:(Math.random()-.5)*500,vy:(Math.random()-.5)*500,life:.65});
+  const winner = target===player ? bot : player;
+  playSound(winner===player?'victory':'death');
+  document.getElementById('result').textContent=winner===player?'YOU WIN!':(mode==='mp'?'YOU LOSE!':'BOT WINS!');
+  document.getElementById('resultSub').textContent=winner===player?'Nice shot!':'Ouch! You got hit by a bullet.';
+
+  if(mode==='mp' && role==='host' && socket){
+    socket.emit('game-over', { winner: winner===player ? 'host':'guest' });
+  }
+}
+function burst(x,y){
+  playSound('shoot',.75+Math.random()*.7);
+  for(let i=0;i<5;i++)sparks.push({x,y,vx:(Math.random()-.5)*100,vy:(Math.random()-.5)*100,life:.25})
+}
+function updateSparks(dt){
+  for(let i=sparks.length-1;i>=0;i--){let s=sparks[i];s.life-=dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.vx*=.96;s.vy*=.96;if(s.life<=0)sparks.splice(i,1)}
+}
+
+function roundedRect(x,y,w,h,r){
+  ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()
+}
+function draw(){
+  ctx.save();
+  if(shake>0){ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.86}
+  ctx.fillStyle='#252b35';ctx.fillRect(0,0,W,H);
+  const ax=arena.x,ay=arena.y,aw=arena.w(),ah=arena.h();
+  ctx.fillStyle='#11151c';roundedRect(ax+6,ay+6,aw,ah,18);
+  ctx.fillStyle='#303744';roundedRect(ax,ay,aw,ah,18);
+  ctx.lineWidth=4;ctx.strokeStyle='#11151c';ctx.stroke();
+
+  drawPlayer(player);drawPlayer(bot);
+  for(const b of bullets)drawBullet(b);
+  for(const s of sparks){ctx.globalAlpha=Math.max(0,s.life/.65);ctx.fillStyle='#d94b45';ctx.fillRect(s.x-3,s.y-3,6,6)}
+  ctx.globalAlpha=1;
+  ctx.restore();
+
+  if(gameState==='playing'||gameState==='paused'){
+    drawCooldown(player,20,H-58,'YOU');
+    drawCooldown(bot,W-120,H-58,mode==='mp'?'THEM':'BOT');
+  }
+}
+function drawPlayer(p){
+  ctx.save();ctx.translate(p.x,p.y);
+  ctx.fillStyle='#11151c';ctx.beginPath();ctx.ellipse(3,7,p.r*1.1,p.r*.55,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(0,0,p.r,0,Math.PI*2);ctx.fill();
+  ctx.lineWidth=5;ctx.strokeStyle='#11151c';ctx.stroke();
+  ctx.restore();
+}
+function drawBullet(b){
+  ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.rot);
+  ctx.fillStyle='#11151c';roundedRect(-13,-7,28,14,6);
+  ctx.fillStyle='#d99a35';roundedRect(-10,-4,21,8,4);
+  ctx.globalAlpha=.25;ctx.fillStyle='#11151c';roundedRect(-24,-3,10,6,3);
+  ctx.restore()
+}
+function drawCooldown(p,x,y,label){
+  const ready=p.cool<=0;
+  ctx.fillStyle='#303744';ctx.strokeStyle='#11151c';ctx.lineWidth=3;
+  roundedRect(x,y,100,28,10);ctx.stroke();
+  ctx.fillStyle=ready?'#4f9f62':'#e95c4f';
+  const maxCool = p===player ? settings.playerCooldown : settings.botCooldown;
+  const pct=ready?1:clamp(1-p.cool/Math.max(0.001,maxCool),0,1);
+  roundedRect(x+3,y+3,94*pct,22,7);
+  ctx.fillStyle='#11151c';ctx.font='900 12px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(label,x+50,y+14);
+}
+
+// =======================================================================
+// MULTIPLAYER NETWORKING
+// =======================================================================
+let socket=null;
+let myLobbyId=null;
+let lastSnapshot=null, lastSnapshotTime=0;
+
+function ensureSocket(){
+  if(socket) return;
+  document.getElementById('mpStatus').textContent='Connecting to server…';
+  socket=io(SERVER_URL,{transports:['websocket','polling']});
+  wireSocketEvents();
+}
+
+function currentName(){
+  const v=document.getElementById('mpName').value.trim();
+  return v ? v.slice(0,16) : 'Player';
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function syncMpSettings(){
+  // Multiplayer is PvP, so both sides should play under identical rules —
+  // fold the "bot" difficulty settings to match the host's own values.
+  settings.botSpeed=settings.playerSpeed;
+  settings.botCooldown=settings.playerCooldown;
+  settings.botSize=settings.playerSize;
+  player.r=settings.playerSize; bot.r=settings.botSize;
+  player.speed=settings.playerSpeed; bot.speed=settings.botSpeed;
+}
+
+function startMpHostGame(){
+  mode='mp'; role='host'; refreshArena();
+  syncMpSettings();
+  reset();
+  gameState='playing';
+  updateOverlays();
+  socket.emit('start-game', settings);
+}
+function resetMpMatch(){
+  syncMpSettings();
+  reset();
+  gameState='playing';
+  updateOverlays();
+  socket.emit('retry-game', settings);
+}
+function leaveMpMatch(){
+  if(socket) socket.emit('leave-lobby');
+  role=null; myLobbyId=null; mode='bot'; refreshArena();
+  gameState='menu'; updateOverlays();
+}
+
+function buildStatePayload(){
+  const aw=arena.w(), ah=arena.h();
+  const norm=p=>({
+    x:(p.x-arena.x)/aw, y:(p.y-arena.y)/ah,
+    vx:p.vx/aw, vy:p.vy/ah,
+    r:p.r/aw, cool:p.cool
+  });
+  return {
+    gameState,
+    host:norm(player),
+    guest:norm(bot),
+    bullets:bullets.map(b=>({
+      id:b.id,
+      x:(b.x-arena.x)/aw, y:(b.y-arena.y)/ah,
+      vx:b.vx/aw, vy:b.vy/ah,
+      curve:b.curve/aw, rot:b.rot
+    }))
+  };
+}
+
+function sendGuestInput(){
+  if(!socket) return;
+  socket.volatile.emit('input', {
+    up:!!keys.w, down:!!keys.s, left:!!keys.a, right:!!keys.d,
+    angle: Math.atan2(mouse.y-player.y, mouse.x-player.x),
+    shoot: !!mouse.down
+  });
+}
+
+// Guest-side: reconcile local prediction with the latest authoritative
+// snapshot from the host. Small corrections are blended in smoothly
+// (no visible snapping); the host's own avatar and all bullets are also
+// dead-reckoned forward using their last-known velocity so movement still
+// looks like 60fps even though snapshots arrive at a lower rate.
+function applyGuestFrame(dt){
+  if(!lastSnapshot) return;
+  const aw=arena.w(), ah=arena.h();
+  const denorm=n=>({x:arena.x+n.x*aw, y:arena.y+n.y*ah, vx:n.vx*aw, vy:n.vy*ah, r:n.r*aw});
+  const elapsed=Math.min((performance.now()-lastSnapshotTime)/1000, 0.15);
+
+  const hostD=denorm(lastSnapshot.host);
+  const predHX=hostD.x+hostD.vx*elapsed, predHY=hostD.y+hostD.vy*elapsed;
+  bot.x += (predHX-bot.x)*Math.min(1,dt*18);
+  bot.y += (predHY-bot.y)*Math.min(1,dt*18);
+  bot.vx=hostD.vx; bot.vy=hostD.vy; bot.r=hostD.r; bot.cool=lastSnapshot.host.cool;
+
+  const guestD=denorm(lastSnapshot.guest);
+  const predGX=guestD.x+guestD.vx*elapsed, predGY=guestD.y+guestD.vy*elapsed;
+  player.x += (predGX-player.x)*Math.min(1,dt*6);
+  player.y += (predGY-player.y)*Math.min(1,dt*6);
+  player.cool=lastSnapshot.guest.cool;
+
+  const seen=new Set();
+  for(const nb of lastSnapshot.bullets){
+    seen.add(nb.id);
+    const bx=arena.x+nb.x*aw, by=arena.y+nb.y*ah, bvx=nb.vx*aw, bvy=nb.vy*ah, bcurve=nb.curve*aw;
+    let b=bullets.find(x=>x.id===nb.id);
+    if(!b){
+      bullets.push({id:nb.id,x:bx,y:by,vx:bvx,vy:bvy,curve:bcurve,rot:nb.rot,age:1,owner:null});
+    }else{
+      b.x += (bx-b.x)*0.5; b.y += (by-b.y)*0.5;
+      b.vx=bvx; b.vy=bvy; b.curve=bcurve; b.rot=nb.rot;
+    }
+  }
+  for(let i=bullets.length-1;i>=0;i--) if(!seen.has(bullets[i].id)) bullets.splice(i,1);
+}
+
+function wireSocketEvents(){
+  socket.on('connect', ()=>{
+    document.getElementById('mpStatus').textContent='Connected — choose or create a lobby.';
+    socket.emit('list-lobbies');
+  });
+  socket.on('connect_error', ()=>{
+    document.getElementById('mpStatus').textContent='Connecting… (the free server can take up to a minute to wake up)';
+  });
+  socket.on('disconnect', ()=>{
+    document.getElementById('mpStatus').textContent='Disconnected from server.';
+    if(mode==='mp' && (gameState==='playing'||gameState==='mpWaiting')){
+      alert('Lost connection to the multiplayer server.');
+      role=null; mode='bot'; refreshArena(); gameState='menu'; updateOverlays();
+    }
+  });
+
+  socket.on('lobby-list', renderLobbyList);
+
+  socket.on('lobby-created', info=>{
+    myLobbyId=info.id; role='host';
+    document.getElementById('mpWaitTitle').textContent=info.name;
+    document.getElementById('mpWaitSub').textContent='Waiting for an opponent to join…';
+    document.getElementById('btnMpStart').style.display='none';
+    gameState='mpWaiting'; updateOverlays();
+  });
+
+  socket.on('join-failed', ({reason})=>{
+    alert(reason==='full' ? 'That lobby just filled up.' : reason==='in-progress' ? 'That match already started.' : 'That lobby no longer exists.');
+    socket.emit('list-lobbies');
+  });
+
+  socket.on('join-success', info=>{
+    myLobbyId=info.id; role='guest';
+    document.getElementById('mpWaitTitle').textContent=info.name;
+    document.getElementById('mpWaitSub').textContent='Waiting for '+info.hostName+' to start the game…';
+    document.getElementById('btnMpStart').style.display='none';
+    gameState='mpWaiting'; updateOverlays();
+  });
+
+  socket.on('guest-joined', ({guestName})=>{
+    document.getElementById('mpWaitSub').textContent=guestName+' joined! Start whenever you\'re ready.';
+    document.getElementById('btnMpStart').style.display='block';
+  });
+
+  socket.on('guest-left', ()=>{
+    document.getElementById('mpWaitSub').textContent='Your opponent left. Waiting for someone new…';
+    document.getElementById('btnMpStart').style.display='none';
+    if(gameState==='playing'||gameState==='over'){
+      alert('Your opponent disconnected.');
+      gameState='mpWaiting'; updateOverlays();
+    }
+  });
+
+  socket.on('host-left', ()=>{
+    alert('The host left the lobby.');
+    myLobbyId=null; role=null; mode='bot'; refreshArena();
+    gameState='mpMenu'; updateOverlays();
+    socket.emit('list-lobbies');
+  });
+
+  socket.on('game-started', recvSettings=>{
+    mode='mp'; role='guest'; refreshArena();
+    Object.assign(settings, recvSettings);
+    player.r=settings.playerSize; bot.r=settings.botSize;
+    player.speed=settings.playerSpeed; bot.speed=settings.botSpeed;
+    lastSnapshot=null;
+    reset();
+    gameState='playing';
+    updateOverlays();
+  });
+
+  socket.on('game-retry', recvSettings=>{
+    Object.assign(settings, recvSettings);
+    player.r=settings.playerSize; bot.r=settings.botSize;
+    lastSnapshot=null;
+    reset();
+    gameState='playing';
+    updateOverlays();
+  });
+
+  socket.on('peer-input', inp=>{ remoteInput=inp; });
+  socket.on('peer-state', payload=>{ lastSnapshot=payload; lastSnapshotTime=performance.now(); });
+
+  socket.on('game-over', ({winner})=>{
+    if(gameState!=='playing') return;
+    gameState='over';
+    const iWon = winner==='guest';
+    document.getElementById('result').textContent = iWon?'YOU WIN!':'YOU LOSE!';
+    document.getElementById('resultSub').textContent = iWon?'Nice shot!':'Ouch! You got hit by a bullet.';
+    updateOverlays();
+  });
+}
+
+function renderLobbyList(list){
+  const el=document.getElementById('lobbyList');
+  if(!list.length){
+    el.innerHTML='<div class="emptyLobbies">No open lobbies right now — create one!</div>';
+    return;
+  }
+  el.innerHTML='';
+  for(const l of list){
+    const full = l.hasGuest || l.status!=='waiting';
+    const row=document.createElement('div');
+    row.className='lobbyRow';
+    row.innerHTML =
+      '<div class="lobbyInfo">'+escapeHtml(l.name)+
+      '<div class="lobbySub">Host: '+escapeHtml(l.hostName)+' · '+(full?'In match':'Open')+'</div></div>';
+    const btn=document.createElement('button');
+    btn.className='menuBtn primary';
+    btn.textContent = full?'FULL':'JOIN';
+    btn.disabled = full;
+    btn.onclick=()=>{ playSound('button'); ensureSocket(); socket.emit('join-lobby',{lobbyId:l.id, guestName:currentName()}); };
+    row.appendChild(btn);
+    el.appendChild(row);
+  }
+}
+
+// =======================================================================
+// Main loop
+// =======================================================================
+function loop(t){
+  const dt=Math.min(.033,(t-last)/1000); last=t;
+
+  if(gameState==='playing'){
+    if(mode==='bot'){
+      movePlayer(dt); botAI(dt); updateBullets(dt);
+    }else if(mode==='mp'){
+      if(role==='host'){
+        movePlayer(dt);
+        applyOpponentInput(dt);
+        updateBullets(dt);
+        if(socket) socket.volatile.emit('state', buildStatePayload());
+      }else if(role==='guest'){
+        movePlayerLocal(dt);
+        extrapolateBulletsVisual(dt);
+        applyGuestFrame(dt);
+        sendGuestInput();
+      }
+    }
+  }
+  updateSparks(dt);draw();requestAnimationFrame(loop)
+}
+
+// ---------------------------------------------------------------------
+// Menu / pause / settings / multiplayer wiring
+// ---------------------------------------------------------------------
+document.getElementById('btnPlay').onclick=()=>{
+  playSound('button'); mode='bot'; role=null; refreshArena(); startGame();
+};
+document.getElementById('btnMenuSettings').onclick=()=>{playSound('button');settingsReturnTo='menu';gameState='settings';updateOverlays()};
+document.getElementById('pauseBtn').onclick=()=>{playSound('button');pauseGame()};
+document.getElementById('btnResume').onclick=()=>{playSound('button');resumeGame()};
+document.getElementById('btnPauseSettings').onclick=()=>{playSound('button');settingsReturnTo='paused';gameState='settings';updateOverlays()};
+document.getElementById('btnPauseMainMenu').onclick=()=>{playSound('button');gameState='menu';updateOverlays()};
+document.getElementById('restart').onclick=()=>{
+  playSound('button');
+  if(mode==='mp' && role==='host') resetMpMatch();
+  else if(mode==='bot') startGame();
+};
+document.getElementById('btnOverMainMenu').onclick=()=>{
+  playSound('button');
+  if(mode==='mp') leaveMpMatch();
+  else { gameState='menu'; updateOverlays(); }
+};
+document.getElementById('btnSettingsBack').onclick=()=>{playSound('button');gameState=settingsReturnTo;updateOverlays()};
+
+document.getElementById('btnMultiplayer').onclick=()=>{
+  playSound('button');
+  ensureSocket();
+  if(socket.connected) socket.emit('list-lobbies');
+  gameState='mpMenu'; updateOverlays();
+};
+document.getElementById('btnCreateLobby').onclick=()=>{
+  playSound('button');
+  ensureSocket();
+  socket.emit('create-lobby', {name: currentName()+"'s Match", hostName: currentName()});
+};
+document.getElementById('btnRefreshLobbies').onclick=()=>{
+  playSound('button'); if(socket) socket.emit('list-lobbies');
+};
+document.getElementById('btnMpBack').onclick=()=>{ playSound('button'); gameState='menu'; updateOverlays(); };
+document.getElementById('btnMpStart').onclick=()=>{ playSound('button'); startMpHostGame(); };
+document.getElementById('btnMpCancel').onclick=()=>{
+  playSound('button');
+  if(socket) socket.emit('leave-lobby');
+  role=null; myLobbyId=null;
+  gameState='mpMenu'; updateOverlays();
+  if(socket) socket.emit('list-lobbies');
+};
+
+const sliderControls=[
+  {id:'setPlayerSpeed',key:'playerSpeed',decimals:0,suffix:'',onChange:v=>{player.speed=v}},
+  {id:'setBotSpeed',key:'botSpeed',decimals:0,suffix:'',onChange:v=>{bot.speed=v}},
+  {id:'setPlayerCooldown',key:'playerCooldown',decimals:1,suffix:'s'},
+  {id:'setBotCooldown',key:'botCooldown',decimals:1,suffix:'s'},
+  {id:'setBulletSpeed',key:'bulletSpeed',decimals:0,suffix:''},
+  {id:'setBulletCurve',key:'bulletCurve',decimals:0,suffix:''},
+  {id:'setSelfHitDelay',key:'selfHitDelay',decimals:1,suffix:'s'},
+  {id:'setPlayerSize',key:'playerSize',decimals:0,suffix:'',onChange:v=>{player.r=v}},
+  {id:'setBotSize',key:'botSize',decimals:0,suffix:'',onChange:v=>{bot.r=v}},
+  {id:'setBotAccuracy',key:'botAccuracy',decimals:0,suffix:'%'},
+  {id:'setBotReaction',key:'botReaction',decimals:0,suffix:'%'},
+];
+const toggleControls=[
+  {id:'setBounce',key:'bounce'},
+  {id:'setScreenShake',key:'screenShake'},
+];
+
+sliderControls.forEach(c=>{
+  const el=document.getElementById(c.id);
+  el.addEventListener('input',()=>{
+    const v=parseFloat(el.value);
+    settings[c.key]=v;
+    document.getElementById('val'+c.id.slice(3)).textContent=v.toFixed(c.decimals)+c.suffix;
+    if(c.onChange)c.onChange(v);
+  });
+});
+toggleControls.forEach(c=>{
+  const el=document.getElementById(c.id);
+  el.addEventListener('change',()=>{settings[c.key]=el.checked});
+});
+
+function applySettingsToInputs(){
+  sliderControls.forEach(c=>{
+    const el=document.getElementById(c.id);
+    const v=settings[c.key];
+    el.value=v;
+    document.getElementById('val'+c.id.slice(3)).textContent=v.toFixed(c.decimals)+c.suffix;
+  });
+  toggleControls.forEach(c=>{
+    document.getElementById(c.id).checked=settings[c.key];
+  });
+}
+document.getElementById('btnResetDefaults').onclick=()=>{
+  playSound('button');
+  Object.assign(settings,DEFAULTS);
+  player.speed=settings.playerSpeed; bot.speed=settings.botSpeed;
+  player.r=settings.playerSize; bot.r=settings.botSize;
+  applySettingsToInputs();
+};
+
+document.getElementById('mpName').value='Player'+Math.floor(Math.random()*1000);
+resize();
+applySettingsToInputs();
+reset();
+updateOverlays();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
