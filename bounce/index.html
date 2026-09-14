@@ -521,6 +521,7 @@ function resumeGame(){ gameState='playing'; updateOverlays(); }
 function updateOverlays(){
   document.getElementById('loadingScreen').style.display = gameState==='loading' ? 'flex':'none';
   document.getElementById('title').style.display = gameState==='menu' ? 'none':'block';
+  document.getElementById('statsPanel').style.display = gameState==='stats' ? 'block':'none';
   document.getElementById('mainMenu').style.display = gameState==='menu' ? 'block':'none';
   document.getElementById('mpMenu').style.display = gameState==='mpMenu' ? 'block':'none';
   document.getElementById('mpWaiting').style.display = gameState==='mpWaiting' ? 'block':'none';
@@ -840,12 +841,25 @@ function extrapolateBulletsVisual(dt){
 
 function hit(target,shooter){
   if(gameState!=='playing')return;
-  gameState='over'; updateOverlays();
+
+  gameState='over';
+  updateOverlays();
+
   if(settings.screenShake) shake=12;
-  for(let i=0;i<22;i++)sparks.push({x:target.x,y:target.y,
-    vx:(Math.random()-.5)*500,vy:(Math.random()-.5)*500,life:.65});
+
+  for(let i=0;i<22;i++){
+    sparks.push({
+      x:target.x,
+      y:target.y,
+      vx:(Math.random()-.5)*500,
+      vy:(Math.random()-.5)*500,
+      life:.65
+    });
+  }
+
   const winner = target===player ? bot : player;
-    // Record completed game
+
+  // Record completed game
   stats.games++;
 
   if(winner===player){
@@ -865,38 +879,25 @@ function hit(target,shooter){
   }
 
   saveStats();
+
   playSound(winner===player?'victory':'death');
-  document.getElementById('result').textContent=winner===player?'YOU WIN!':(mode==='mp'?'YOU LOSE!':'BOT WINS!');
-  document.getElementById('resultSub').textContent=winner===player?'Nice shot!':'Ouch! You got hit by a bullet.';
-
-  socket.on('game-over', ({winner})=>{
-  if(gameState!=='playing') return;
-
-  gameState='over';
-
-  const iWon = winner==='guest';
-
-  // Record multiplayer result for guest
-  stats.games++;
-
-  if(iWon){
-    stats.wins++;
-    stats.mpWins++;
-  }else{
-    stats.losses++;
-    stats.mpLosses++;
-  }
-
-  saveStats();
 
   document.getElementById('result').textContent =
-    iWon ? 'YOU WIN!' : 'YOU LOSE!';
+    winner===player
+      ? 'YOU WIN!'
+      : (mode==='mp' ? 'YOU LOSE!' : 'BOT WINS!');
 
   document.getElementById('resultSub').textContent =
-    iWon ? 'Nice shot!' : 'Ouch! You got hit by a bullet.';
+    winner===player
+      ? 'Nice shot!'
+      : 'Ouch! You got hit by a bullet.';
 
-  updateOverlays();
-});
+  // Host tells the guest who won.
+  if(mode==='mp' && role==='host' && socket){
+    socket.emit('game-over', {
+      winner: winner===player ? 'host' : 'guest'
+    });
+  }
 }
 function burst(x,y){
   playSound('shoot',.75+Math.random()*.7);
@@ -1267,9 +1268,26 @@ function wireSocketEvents(){
     if(gameState!=='playing') return;
     gameState='over';
     const iWon = winner==='guest';
-    document.getElementById('result').textContent = iWon?'YOU WIN!':'YOU LOSE!';
-    document.getElementById('resultSub').textContent = iWon?'Nice shot!':'Ouch! You got hit by a bullet.';
-    updateOverlays();
+    // Record multiplayer result for guest
+  stats.games++;
+
+  if(iWon){
+    stats.wins++;
+    stats.mpWins++;
+  }else{
+    stats.losses++;
+    stats.mpLosses++;
+  }
+
+  saveStats();
+
+  document.getElementById('result').textContent =
+    iWon ? 'YOU WIN!' : 'YOU LOSE!';
+
+  document.getElementById('resultSub').textContent =
+    iWon ? 'Nice shot!' : 'Ouch! You got hit by a bullet.';
+
+  updateOverlays();
   });
 }
 
@@ -1391,8 +1409,6 @@ document.getElementById('btnOverMainMenu').onclick=()=>{
 };
 document.getElementById('btnSettingsBack').onclick=()=>{playSound('button');gameState=settingsReturnTo;updateOverlays()};
 
-document.getElementById('statsPanel').style.display =
-  gameState==='stats' ? 'block':'none';
 
 document.getElementById('btnMultiplayer').onclick=()=>{
   playSound('button');
