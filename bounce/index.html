@@ -768,6 +768,10 @@ function draw(){
     drawCooldown(player,20,H-58,'YOU');
     drawCooldown(bot,W-120,H-58,mode==='mp'?'THEM':'BOT');
   }
+
+  if(mode==='mp' && (gameState==='playing'||gameState==='paused')){
+    drawPing();
+  }
 }
 function drawPlayer(p){
   ctx.save();ctx.translate(p.x,p.y);
@@ -795,18 +799,82 @@ function drawCooldown(p,x,y,label){
   ctx.fillText(label,x+50,y+14);
 }
 
+function drawPing(){
+  const text = pingMs === null ? 'PING --' : `PING ${pingMs}ms`;
+
+  ctx.save();
+
+  ctx.font='900 13px Arial';
+  ctx.textAlign='right';
+  ctx.textBaseline='top';
+
+  const x=W-20;
+  const y=20;
+
+  // Small dark background
+  const width=92;
+  const height=30;
+
+  ctx.fillStyle='#11151c';
+  ctx.beginPath();
+  ctx.roundRect(x-width,y,width,height,9);
+  ctx.fill();
+
+  // Ping color
+  let pingColor='#4f9f62';
+
+  if(pingMs !== null){
+    if(pingMs > 150) pingColor='#e95c4f';
+    else if(pingMs > 80) pingColor='#d99a35';
+  }
+
+  ctx.fillStyle=pingColor;
+  ctx.fillText(text,x-10,y+8);
+
+  ctx.restore();
+}
+
 // =======================================================================
 // MULTIPLAYER NETWORKING
 // =======================================================================
 let socket=null;
 let myLobbyId=null;
 let lastSnapshot=null, lastSnapshotTime=0;
+let pingMs = null;
+let pingTimer = null;
+let pingSamples = [];
 
 function ensureSocket(){
   if(socket) return;
   document.getElementById('mpStatus').textContent='Connecting to server…';
   socket=io(SERVER_URL,{transports:['websocket','polling']});
   wireSocketEvents();
+}
+
+function startPingMonitor(){
+  if(pingTimer) return;
+
+  const checkPing = () => {
+    if(!socket || !socket.connected) return;
+
+    const sentAt = performance.now();
+    socket.emit('ping-check', sentAt);
+  };
+
+  socket.on('pong-check', sentAt => {
+    const rtt = performance.now() - sentAt;
+
+    pingSamples.push(rtt);
+    if(pingSamples.length > 5) pingSamples.shift();
+
+    // Average the last few samples so the number doesn't jump around constantly.
+    pingMs = Math.round(
+      pingSamples.reduce((a,b)=>a+b,0) / pingSamples.length
+    );
+  });
+
+  checkPing();
+  pingTimer = setInterval(checkPing, 1000);
 }
 
 function currentName(){
@@ -954,9 +1022,11 @@ function wireSocketEvents(){
     finishLoading();
     document.getElementById('mpStatus').textContent='Connected — choose or create a lobby.';
     socket.emit('list-lobbies');
+
+    startPingMonitor();
   });
   socket.on('connect_error', ()=>{
-    document.getElementById('mpStatus').textContent='Connecting… (the free server can take up to a minute to wake up)';
+    document.getElementById('mpStatus').textContent='Connecting… (the server can take up to a minute to wake up)';
   });
   socket.on('disconnect', ()=>{
     document.getElementById('mpStatus').textContent='Disconnected from server.';
