@@ -5,6 +5,41 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BOUNCE! — Cartoon Duel</title>
 <style>
+
+  #statsPanel{
+  width:min(440px,90vw);
+}
+
+.statsGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:18px 0;
+}
+
+.statBox{
+  background:#252b35;
+  border:2px solid #11151c;
+  border-radius:12px;
+  padding:14px 10px;
+  text-align:center;
+}
+
+.statValue{
+  font-family:Arial Black,Impact,sans-serif;
+  font-size:25px;
+  line-height:1;
+  color:#f4ead2;
+}
+
+.statLabel{
+  margin-top:7px;
+  font-family:Arial,sans-serif;
+  font-size:10px;
+  font-weight:900;
+  opacity:.55;
+}
+ 
   *{box-sizing:border-box}
   html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#252b35}
   body{font-family:Arial Black,Impact,sans-serif}
@@ -141,6 +176,7 @@
     <p class="sub">A cartoon bullet duel</p>
     <button class="menuBtn primary" id="btnPlay">PLAY VS BOT</button>
     <button class="menuBtn secondary" id="btnMultiplayer">MULTIPLAYER</button>
+    <button class="menuBtn neutral" id="btnStats">STATS</button>
     <button class="menuBtn neutral" id="btnMenuSettings">SETTINGS</button>
   </div>
 
@@ -262,6 +298,47 @@
   </div>
 </div>
 
+<!-- stats -->
+
+ <div id="statsPanel" class="panel">
+  <h1>STATS</h1>
+
+  <div class="statsGrid">
+    <div class="statBox">
+      <div class="statValue" id="statGames">0</div>
+      <div class="statLabel">GAMES</div>
+    </div>
+
+    <div class="statBox">
+      <div class="statValue" id="statWins">0</div>
+      <div class="statLabel">WINS</div>
+    </div>
+
+    <div class="statBox">
+      <div class="statValue" id="statLosses">0</div>
+      <div class="statLabel">LOSSES</div>
+    </div>
+
+    <div class="statBox">
+      <div class="statValue" id="statWinRate">0%</div>
+      <div class="statLabel">WIN RATE</div>
+    </div>
+
+    <div class="statBox">
+      <div class="statValue" id="statMpWins">0</div>
+      <div class="statLabel">MP WINS</div>
+    </div>
+
+    <div class="statBox">
+      <div class="statValue" id="statMpLosses">0</div>
+      <div class="statLabel">MP LOSSES</div>
+    </div>
+  </div>
+
+  <button class="menuBtn neutral" id="btnStatsBack">BACK</button>
+  <button class="menuBtn neutral" id="btnResetStats">RESET STATS</button>
+</div>
+
 <script src="https://bounce-multiplayer-server.onrender.com/socket.io/socket.io.js"></script>
 <script>
 // =======================================================================
@@ -328,6 +405,44 @@ canvas.addEventListener('mousedown',e=>{
 });
 addEventListener('mouseup',e=>{if(e.button===0)mouse.down=false});
 
+
+ // stats stuff
+
+const STATS_KEY='bounce_stats_v1';
+
+const DEFAULT_STATS={
+  games:0,
+  wins:0,
+  losses:0,
+  mpWins:0,
+  mpLosses:0,
+  botWins:0
+};
+
+let stats={
+  ...DEFAULT_STATS,
+  ...(JSON.parse(localStorage.getItem(STATS_KEY)||'{}'))
+};
+
+function saveStats(){
+  localStorage.setItem(STATS_KEY,JSON.stringify(stats));
+}
+
+function updateStatsScreen(){
+  document.getElementById('statGames').textContent=stats.games;
+  document.getElementById('statWins').textContent=stats.wins;
+  document.getElementById('statLosses').textContent=stats.losses;
+
+  const total=stats.wins+stats.losses;
+  const winRate=total ? Math.round(stats.wins/total*100) : 0;
+
+  document.getElementById('statWinRate').textContent=winRate+'%';
+
+  document.getElementById('statMpWins').textContent=stats.mpWins;
+  document.getElementById('statMpLosses').textContent=stats.mpLosses;
+}
+
+ 
 // ---------------------------------------------------------------------
 // Settings
 // ---------------------------------------------------------------------
@@ -730,13 +845,58 @@ function hit(target,shooter){
   for(let i=0;i<22;i++)sparks.push({x:target.x,y:target.y,
     vx:(Math.random()-.5)*500,vy:(Math.random()-.5)*500,life:.65});
   const winner = target===player ? bot : player;
+    // Record completed game
+  stats.games++;
+
+  if(winner===player){
+    stats.wins++;
+
+    if(mode==='mp'){
+      stats.mpWins++;
+    }
+  }else{
+    stats.losses++;
+
+    if(mode==='mp'){
+      stats.mpLosses++;
+    }else{
+      stats.botWins++;
+    }
+  }
+
+  saveStats();
   playSound(winner===player?'victory':'death');
   document.getElementById('result').textContent=winner===player?'YOU WIN!':(mode==='mp'?'YOU LOSE!':'BOT WINS!');
   document.getElementById('resultSub').textContent=winner===player?'Nice shot!':'Ouch! You got hit by a bullet.';
 
-  if(mode==='mp' && role==='host' && socket){
-    socket.emit('game-over', { winner: winner===player ? 'host':'guest' });
+  socket.on('game-over', ({winner})=>{
+  if(gameState!=='playing') return;
+
+  gameState='over';
+
+  const iWon = winner==='guest';
+
+  // Record multiplayer result for guest
+  stats.games++;
+
+  if(iWon){
+    stats.wins++;
+    stats.mpWins++;
+  }else{
+    stats.losses++;
+    stats.mpLosses++;
   }
+
+  saveStats();
+
+  document.getElementById('result').textContent =
+    iWon ? 'YOU WIN!' : 'YOU LOSE!';
+
+  document.getElementById('resultSub').textContent =
+    iWon ? 'Nice shot!' : 'Ouch! You got hit by a bullet.';
+
+  updateOverlays();
+});
 }
 function burst(x,y){
   playSound('shoot',.75+Math.random()*.7);
@@ -1183,6 +1343,31 @@ function loop(t){
   updateSparks(dt);draw();requestAnimationFrame(loop)
 }
 
+
+ // statssss
+
+document.getElementById('btnStats').onclick=()=>{
+  playSound('button');
+  updateStatsScreen();
+  gameState='stats';
+  updateOverlays();
+};
+
+document.getElementById('btnStatsBack').onclick=()=>{
+  playSound('button');
+  gameState='menu';
+  updateOverlays();
+};
+
+document.getElementById('btnResetStats').onclick=()=>{
+  playSound('button');
+
+  if(confirm('Reset all stats?')){
+    stats={...DEFAULT_STATS};
+    saveStats();
+    updateStatsScreen();
+  }
+};
 // ---------------------------------------------------------------------
 // Menu / pause / settings / multiplayer wiring
 // ---------------------------------------------------------------------
@@ -1205,6 +1390,9 @@ document.getElementById('btnOverMainMenu').onclick=()=>{
   else { gameState='menu'; updateOverlays(); }
 };
 document.getElementById('btnSettingsBack').onclick=()=>{playSound('button');gameState=settingsReturnTo;updateOverlays()};
+
+document.getElementById('statsPanel').style.display =
+  gameState==='stats' ? 'block':'none';
 
 document.getElementById('btnMultiplayer').onclick=()=>{
   playSound('button');
