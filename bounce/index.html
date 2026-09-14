@@ -367,11 +367,34 @@ let bulletIdCounter=1;
 let predictedBulletId=-1; // negative, so it never collides with a real host-assigned id
 
 function reset(){
-  player.x=arena.x+arena.w()*.25; player.y=arena.y+arena.h()*.5; player.cool=0;
-  bot.x=arena.x+arena.w()*.75; bot.y=arena.y+arena.h()*.5; bot.cool=.8;
-  bot.vx=bot.vy=0;bot.decision=0;bot.aimJitter=0;
-  bullets=[];sparks=[];dust=[];
+  if(mode==='mp' && role==='guest'){
+    // Guest is the right-side player locally.
+    player.x=arena.x+arena.w()*.75;
+    player.y=arena.y+arena.h()*.5;
+
+    // Host is the left-side opponent locally.
+    bot.x=arena.x+arena.w()*.25;
+    bot.y=arena.y+arena.h()*.5;
+  }else{
+    // Host / bot mode uses the normal arrangement.
+    player.x=arena.x+arena.w()*.25;
+    player.y=arena.y+arena.h()*.5;
+
+    bot.x=arena.x+arena.w()*.75;
+    bot.y=arena.y+arena.h()*.5;
+  }
+
+  player.cool=0;
+  bot.cool=.8;
+  bot.vx=bot.vy=0;
+  bot.decision=0;
+  bot.aimJitter=0;
+
+  bullets=[];
+  sparks=[];
+  dust=[];
 }
+ 
 function startGame(){
   reset();
   gameState='playing';
