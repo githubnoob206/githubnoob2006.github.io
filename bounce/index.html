@@ -117,6 +117,14 @@
   #settingsBtnRow{display:flex;gap:10px;margin-top:18px}
   #settingsBtnRow .menuBtn{margin:0}
 
+  #mpDisclaimer{
+  display:flex;align-items:center;gap:8px;
+  background:#4a3520;border:2px solid #11151c;border-radius:10px;
+  padding:8px 12px;margin-bottom:12px;
+  font-family:Arial,sans-serif;font-weight:900;font-size:12px;
+  color:#f4ead2;text-align:left;
+  }
+  
   #mpMenu,#mpWaiting{width:min(440px,90vw)}
   #mpStatus{font-family:Arial,sans-serif;font-weight:900;font-size:12px;opacity:.75;margin-bottom:10px;min-height:16px}
   #lobbyList{max-height:230px;overflow-y:auto;margin-bottom:14px;text-align:left}
@@ -182,6 +190,7 @@
 
   <div id="mpMenu" class="panel">
     <h1>MULTIPLAYER</h1>
+    <div id="mpDisclaimer">⚠️ Disclaimer: Placeholder here.</div>
     <div class="setting-row">
       <label for="mpName">Your Name</label>
       <input id="mpName" type="text" maxlength="16">
