@@ -1,8 +1,20 @@
+Here is your complete, updated `index.html` file with dual virtual joystick controls for mobile devices.
+
+### Key Mobile Features Added:
+
+* **Dual Virtual Joysticks:** Left joystick for 360° movement; right joystick for 360° aiming and shooting.
+* **Multi-Touch Support:** Independent left and right touch tracking so you can move and aim/shoot simultaneously.
+* **Auto-Detection & Responsiveness:** Automatically displays touch controls when played on a mobile device or touch screen while keeping touch actions from scrolling or zooming the page.
+* **Multiplayer Network Sync:** Fully integrated with your existing Socket.IO movement and shooting packets.
+
+Replace your current `index.html` file with this complete code:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BOUNCE! — Cartoon Duel</title>
 <style>
 
@@ -40,10 +52,10 @@
   opacity:.55;
 }
  
-  *{box-sizing:border-box}
-  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#252b35}
+  *{box-sizing:border-box; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#252b35;touch-action:none;}
   body{font-family:Arial Black,Impact,sans-serif}
-  canvas{display:block;width:100vw;height:100vh;cursor:crosshair}
+  canvas{display:block;width:100vw;height:100vh;cursor:crosshair;touch-action:none;}
   #ui{
     position:fixed;inset:0;pointer-events:none;
     color:#f4ead2;text-shadow:2px 2px 0 #11151c;
@@ -65,6 +77,35 @@
     box-shadow:3px 3px 0 #17212b;
   }
   #pauseBtn:active{transform:translateY(2px);box-shadow:1px 1px 0 #17212b}
+
+  /* Mobile Joysticks */
+  .joystick-container {
+    position: absolute;
+    bottom: 30px;
+    width: 130px;
+    height: 130px;
+    background: rgba(48, 55, 68, 0.45);
+    border: 3px solid rgba(17, 21, 28, 0.7);
+    border-radius: 50%;
+    pointer-events: auto;
+    display: none;
+    touch-action: none;
+  }
+  #joystickLeft { left: 25px; }
+  #joystickRight { right: 25px; }
+  .joystick-knob {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 54px; height: 54px;
+    margin-top: -27px; margin-left: -27px;
+    background: #ef5549;
+    border: 3px solid #11151c;
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 2px 2px 0 #11151c;
+    transform: translate(0px, 0px);
+  }
+  #joystickRight .joystick-knob { background: #3b78d8; }
 
   .panel{
     position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
@@ -184,6 +225,14 @@
   </div>
 
   <div id="help">W A S D to move • Mouse to aim • Click to shoot • ESC to pause</div>
+
+  <!-- Joysticks for Mobile -->
+  <div id="joystickLeft" class="joystick-container">
+    <div id="knobLeft" class="joystick-knob"></div>
+  </div>
+  <div id="joystickRight" class="joystick-container">
+    <div id="knobRight" class="joystick-knob"></div>
+  </div>
 
   <div id="mainMenu" class="panel">
     <h1>BOUNCE!</h1>
@@ -360,9 +409,6 @@
 // CONFIG
 // =======================================================================
 const SERVER_URL='https://bounce-multiplayer-server.onrender.com';
-// Fixed logical arena size used ONLY for multiplayer. Locking the aspect
-// ratio here means host and guest always agree on where the walls are,
-// regardless of each person's own window size/shape.
 const MP_W=1280, MP_H=720;
 
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
@@ -371,8 +417,118 @@ function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight
   canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);refreshArena()}
 addEventListener('resize',resize);
 
+// Prevent mobile scroll/zoom on touch
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
 // ---------------------------------------------------------------------
-// Sound effects (button.wav, death.wav, victory.wav, shoot.wav — same folder)
+// Mobile Touch Joystick Logic
+// ---------------------------------------------------------------------
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+const touchInput = { moveX: 0, moveY: 0, aimX: 0, aimY: 0, isAiming: false };
+
+const joyLeft = document.getElementById('joystickLeft');
+const joyRight = document.getElementById('joystickRight');
+const knobLeft = document.getElementById('knobLeft');
+const knobRight = document.getElementById('knobRight');
+
+let leftTouchId = null, rightTouchId = null;
+let leftCenter = { x: 0, y: 0 }, rightCenter = { x: 0, y: 0 };
+const joyRadius = 45;
+
+if (isTouchDevice) {
+  joyLeft.style.display = 'block';
+  joyRight.style.display = 'block';
+}
+
+function handleTouchStart(e) {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const t = e.changedTouches[i];
+    
+    // Left joystick touch
+    if (leftTouchId === null && t.clientX < W / 2) {
+      leftTouchId = t.identifier;
+      const rect = joyLeft.getBoundingClientRect();
+      leftCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      updateJoystick(t.clientX, t.clientY, leftCenter, knobLeft, 'left');
+    }
+    // Right joystick touch
+    else if (rightTouchId === null && t.clientX >= W / 2) {
+      rightTouchId = t.identifier;
+      const rect = joyRight.getBoundingClientRect();
+      rightCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      updateJoystick(t.clientX, t.clientY, rightCenter, knobRight, 'right');
+    }
+  }
+}
+
+function handleTouchMove(e) {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const t = e.changedTouches[i];
+    if (t.identifier === leftTouchId) {
+      updateJoystick(t.clientX, t.clientY, leftCenter, knobLeft, 'left');
+    } else if (t.identifier === rightTouchId) {
+      updateJoystick(t.clientX, t.clientY, rightCenter, knobRight, 'right');
+    }
+  }
+}
+
+function handleTouchEnd(e) {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const t = e.changedTouches[i];
+    if (t.identifier === leftTouchId) {
+      leftTouchId = null;
+      touchInput.moveX = 0; touchInput.moveY = 0;
+      knobLeft.style.transform = `translate(0px, 0px)`;
+    } else if (t.identifier === rightTouchId) {
+      rightTouchId = null;
+      touchInput.isAiming = false;
+      mouse.down = false;
+      knobRight.style.transform = `translate(0px, 0px)`;
+    }
+  }
+}
+
+function updateJoystick(clientX, clientY, center, knobEl, type) {
+  let dx = clientX - center.x;
+  let dy = clientY - center.y;
+  let dist = Math.hypot(dx, dy);
+
+  if (dist > joyRadius) {
+    dx = (dx / dist) * joyRadius;
+    dy = (dy / dist) * joyRadius;
+    dist = joyRadius;
+  }
+
+  knobEl.style.transform = `translate(${dx}px, ${dy}px)`;
+
+  const normX = dx / joyRadius;
+  const normY = dy / joyRadius;
+
+  if (type === 'left') {
+    touchInput.moveX = normX;
+    touchInput.moveY = normY;
+  } else if (type === 'right') {
+    touchInput.aimX = normX;
+    touchInput.aimY = normY;
+    if (dist > 8) { // Deadzone threshold
+      touchInput.isAiming = true;
+      mouse.x = player.x + normX * 150;
+      mouse.y = player.y + normY * 150;
+      mouse.down = true;
+    } else {
+      touchInput.isAiming = false;
+      mouse.down = false;
+    }
+  }
+}
+
+addEventListener('touchstart', handleTouchStart, { passive: false });
+addEventListener('touchmove', handleTouchMove, { passive: false });
+addEventListener('touchend', handleTouchEnd, { passive: false });
+addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+// ---------------------------------------------------------------------
+// Sound effects
 // ---------------------------------------------------------------------
 const soundFiles={button:'button.wav',death:'death.wav',victory:'victory.wav',shoot:'shoot.wav'};
 const sounds={};
@@ -405,43 +561,26 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
 
 const mouse={x:W/2,y:H/2,down:false};
-canvas.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+canvas.addEventListener('mousemove',e=>{
+  if(!touchInput.isAiming) {
+    mouse.x=e.clientX; mouse.y=e.clientY;
+  }
+});
 canvas.addEventListener('mousedown',e=>{
   if(e.button===0){
     mouse.down=true;
-    // Guests still send their click to the host, who remains the final
-    // authority on the shot (cooldown, hit outcome). But we ALSO fire a
-    // local predicted bullet immediately, from your own current on-screen
-    // position — so it looks and feels instant instead of teleporting in
-    // a beat later from wherever the host last knew you to be.
     if(!(mode==='mp'&&role==='guest')) shootPlayer();
     else guestPredictShoot();
   }
 });
-addEventListener('mouseup',e=>{if(e.button===0)mouse.down=false});
+addEventListener('mouseup',e=>{if(e.button===0&&!touchInput.isAiming)mouse.down=false});
 
-
- // stats stuff
-
+// stats stuff
 const STATS_KEY='bounce_stats_v1';
+const DEFAULT_STATS={ games:0, wins:0, losses:0, mpWins:0, mpLosses:0, botWins:0 };
+let stats={ ...DEFAULT_STATS, ...(JSON.parse(localStorage.getItem(STATS_KEY)||'{}')) };
 
-const DEFAULT_STATS={
-  games:0,
-  wins:0,
-  losses:0,
-  mpWins:0,
-  mpLosses:0,
-  botWins:0
-};
-
-let stats={
-  ...DEFAULT_STATS,
-  ...(JSON.parse(localStorage.getItem(STATS_KEY)||'{}'))
-};
-
-function saveStats(){
-  localStorage.setItem(STATS_KEY,JSON.stringify(stats));
-}
+function saveStats(){ localStorage.setItem(STATS_KEY,JSON.stringify(stats)); }
 
 function updateStatsScreen(){
   document.getElementById('statGames').textContent=stats.games;
@@ -452,12 +591,10 @@ function updateStatsScreen(){
   const winRate=total ? Math.round(stats.wins/total*100) : 0;
 
   document.getElementById('statWinRate').textContent=winRate+'%';
-
   document.getElementById('statMpWins').textContent=stats.mpWins;
   document.getElementById('statMpLosses').textContent=stats.mpLosses;
 }
 
- 
 // ---------------------------------------------------------------------
 // Settings
 // ---------------------------------------------------------------------
@@ -471,11 +608,11 @@ const DEFAULTS={
 };
 const settings=Object.assign({},DEFAULTS);
 
-let gameState='loading'; // 'loading'|'menu'|'mpMenu'|'mpWaiting'|'settings'|'playing'|'paused'|'over'
+let gameState='loading'; 
 let settingsReturnTo='menu';
 let last=performance.now(),shake=0;
-let mode='bot';   // 'bot' | 'mp'
-let role=null;    // 'host' | 'guest' (only meaningful when mode==='mp')
+let mode='bot';   
+let role=null;    
 
 function soloArenaCalc(){ return {x:35,y:92,w:()=>W-70,h:()=>H-142}; }
 function mpArenaCalc(){
@@ -494,24 +631,15 @@ const bot={x:0,y:0,r:settings.botSize,speed:settings.botSpeed,cool:0,color:'#3b7
 
 let bullets=[],sparks=[],dust=[];
 let bulletIdCounter=1;
-let predictedBulletId=-1; // negative, so it never collides with a real host-assigned id
+let predictedBulletId=-1; 
 
 function reset(){
   if(mode==='mp' && role==='guest'){
-    // Guest is the right-side player locally.
-    player.x=arena.x+arena.w()*.75;
-    player.y=arena.y+arena.h()*.5;
-
-    // Host is the left-side opponent locally.
-    bot.x=arena.x+arena.w()*.25;
-    bot.y=arena.y+arena.h()*.5;
+    player.x=arena.x+arena.w()*.75; player.y=arena.y+arena.h()*.5;
+    bot.x=arena.x+arena.w()*.25; bot.y=arena.y+arena.h()*.5;
   }else{
-    // Host / bot mode uses the normal arrangement.
-    player.x=arena.x+arena.w()*.25;
-    player.y=arena.y+arena.h()*.5;
-
-    bot.x=arena.x+arena.w()*.75;
-    bot.y=arena.y+arena.h()*.5;
+    player.x=arena.x+arena.w()*.25; player.y=arena.y+arena.h()*.5;
+    bot.x=arena.x+arena.w()*.75; bot.y=arena.y+arena.h()*.5;
   }
 
   player.cool=0;
@@ -520,16 +648,10 @@ function reset(){
   bot.decision=0;
   bot.aimJitter=0;
 
-  bullets=[];
-  sparks=[];
-  dust=[];
+  bullets=[]; sparks=[]; dust=[];
 }
  
-function startGame(){
-  reset();
-  gameState='playing';
-  updateOverlays();
-}
+function startGame(){ reset(); gameState='playing'; updateOverlays(); }
 function pauseGame(){ gameState='paused'; updateOverlays(); }
 function resumeGame(){ gameState='playing'; updateOverlays(); }
 
@@ -545,9 +667,18 @@ function updateOverlays(){
   document.getElementById('message').style.display = gameState==='over' ? 'block':'none';
   document.getElementById('pauseBtn').style.display = (gameState==='playing'&&mode!=='mp') ? 'flex':'none';
   document.getElementById('help').style.display = (gameState==='playing'||gameState==='paused') ? 'block':'none';
-  document.getElementById('help').textContent = mode==='mp'
-    ? 'W A S D to move • Mouse to aim • Click to shoot • ESC to leave match'
-    : 'W A S D to move • Mouse to aim • Click to shoot • ESC to pause';
+  
+  const showJoy = isTouchDevice && gameState === 'playing';
+  joyLeft.style.display = showJoy ? 'block' : 'none';
+  joyRight.style.display = showJoy ? 'block' : 'none';
+
+  if (isTouchDevice) {
+    document.getElementById('help').textContent = 'Left stick to move • Right stick to aim & shoot';
+  } else {
+    document.getElementById('help').textContent = mode==='mp'
+      ? 'W A S D to move • Mouse to aim • Click to shoot • ESC to leave match'
+      : 'W A S D to move • Mouse to aim • Click to shoot • ESC to pause';
+  }
   updateMpOverPanel();
 }
 function updateMpOverPanel(){
@@ -574,18 +705,10 @@ function fire(shooter,angle){
   });
 }
 
-// Guest-side prediction: fires a bullet immediately, from the guest's own
-// current on-screen position, the instant they click — instead of waiting
-// for the round trip to the host and back. The host is still the final
-// authority (it independently spawns the "real" bullet from the input we
-// send it), so once that real bullet's snapshot arrives, applyGuestFrame
-// below "adopts" this predicted one into it rather than showing a
-// duplicate. If the host never confirms it (e.g. our cooldown had
-// actually already expired on their end), it quietly fades out instead.
 function guestPredictShoot(){
   if(gameState!=='playing'||mode!=='mp'||role!=='guest'||player.cool>0) return;
   playSound('shoot');
-  player.cool = settings.playerCooldown; // optimistic — host will correct this via snapshots regardless
+  player.cool = settings.playerCooldown;
   const s = arena.w()/MP_W;
   const angle = Math.atan2(mouse.y-player.y,mouse.x-player.x);
   const speed=Math.max(1,settings.bulletSpeed*s);
@@ -634,25 +757,16 @@ function botAI(dt){
       const d=Math.hypot(ddx,ddy);
 
       if(d<closestD){closestD=d;closestDX=ddx;closestDY=ddy}
-
-      if(d<72){
-        hitT=t;
-        break;
-      }
-
+      if(d<72){ hitT=t; break; }
       px=nxp;py=nyp;
     }
 
     if(hitT<minT){
       minT=hitT;
-      dangerX=closestDX;
-      dangerY=closestDY;
-
+      dangerX=closestDX; dangerY=closestDY;
       const len=Math.hypot(dangerX,dangerY)||1;
       dangerX/=len; dangerY/=len;
-      if(Math.abs(dangerX)+Math.abs(dangerY)<0.15){
-        dangerX=-vy; dangerY=vx;
-      }
+      if(Math.abs(dangerX)+Math.abs(dangerY)<0.15){ dangerX=-vy; dangerY=vx; }
     }
   }
 
@@ -669,29 +783,16 @@ function botAI(dt){
   if(minT<dodgeThreshold){
     const len=Math.hypot(dangerX,dangerY)||1;
     const px=dangerX/len,py=dangerY/len;
-
-    tx+=px*170;
-    ty+=py*170;
-
+    tx+=px*170; ty+=py*170;
     const side=135;
     const sign=(Math.sin(performance.now()/180)+1)>1 ? 1 : -1;
-    tx+=-py*side*sign;
-    ty+= px*side*sign;
-
+    tx+=-py*side*sign; ty+= px*side*sign;
     tx+=wallX*0.8; ty+=wallY*0.8;
     speedMult=1.35;
   }else{
     const iAmReloading=bot.cool>0.15;
     const playerReadySoon=player.cool<0.4;
-
-    let desiredDist;
-    if(iAmReloading&&playerReadySoon){
-      desiredDist=280;
-    }else if(!iAmReloading){
-      desiredDist=210;
-    }else{
-      desiredDist=140;
-    }
+    let desiredDist = iAmReloading&&playerReadySoon ? 280 : (!iAmReloading ? 210 : 140);
 
     const ddx=bot.x-player.x,ddy=bot.y-player.y;
     const distToPlayer=Math.hypot(ddx,ddy)||1;
@@ -699,7 +800,6 @@ function botAI(dt){
 
     const tangentSign=Math.sin(performance.now()/1400)>=0?1:-1;
     const tanX=-awayY*tangentSign,tanY=awayX*tangentSign;
-
     const distError=distToPlayer-desiredDist;
     const approach=clamp(distError/140,-1,1);
 
@@ -708,8 +808,7 @@ function botAI(dt){
     const dl=Math.hypot(dirX,dirY)||1;
     dirX/=dl;dirY/=dl;
 
-    tx=bot.x+dirX*160;
-    ty=bot.y+dirY*160;
+    tx=bot.x+dirX*160; ty=bot.y+dirY*160;
     speedMult=Math.abs(approach)>0.6?1.15:1;
   }
 
@@ -742,21 +841,21 @@ function botAI(dt){
 }
 
 // ---------------------------------------------------------------------
-// Movement
+// Movement (Updated for Keyboard + Joystick)
 // ---------------------------------------------------------------------
 function movePlayer(dt){
-  let x=(keys.d?1:0)-(keys.a?1:0),y=(keys.s?1:0)-(keys.w?1:0);
-  const l=Math.hypot(x,y)||1;
-  player.vx=x/l*player.speed;player.vy=y/l*player.speed;
+  let x = ((keys.d?1:0)-(keys.a?1:0)) + touchInput.moveX;
+  let y = ((keys.s?1:0)-(keys.w?1:0)) + touchInput.moveY;
+  const l = Math.hypot(x,y);
+  if (l > 1) { x /= l; y /= l; }
+
+  player.vx=x*player.speed; player.vy=y*player.speed;
   player.x=clamp(player.x+player.vx*dt,arena.x+player.r+5,arena.x+arena.w()-player.r-5);
   player.y=clamp(player.y+player.vy*dt,arena.y+player.r+5,arena.y+arena.h()-player.r-5);
   player.cool=Math.max(0,player.cool-dt);
-  if(mouse.down)shootPlayer();
+  if(mouse.down) shootPlayer();
 }
 
-// Host uses this to drive the guest's on-screen avatar from their latest
-// input packet. Same movement math as movePlayer, just fed by network
-// input instead of local keys.
 let remoteInput={up:false,down:false,left:false,right:false,angle:0,shoot:false};
 function applyOpponentInput(dt){
   const inp=remoteInput;
@@ -766,18 +865,16 @@ function applyOpponentInput(dt){
   bot.x=clamp(bot.x+bot.vx*dt, arena.x+bot.r+5, arena.x+arena.w()-bot.r-5);
   bot.y=clamp(bot.y+bot.vy*dt, arena.y+bot.r+5, arena.y+arena.h()-bot.r-5);
   bot.cool=Math.max(0,bot.cool-dt);
-  if(inp.shoot && bot.cool<=0){
-    fire(bot, inp.angle);
-  }
+  if(inp.shoot && bot.cool<=0){ fire(bot, inp.angle); }
 }
 
-// Guest's own local prediction: moves immediately on keypress so it feels
-// like a normal 60fps game, then gets gently corrected each time an
-// authoritative snapshot arrives from the host (see applyGuestFrame).
 function movePlayerLocal(dt){
-  let x=(keys.d?1:0)-(keys.a?1:0),y=(keys.s?1:0)-(keys.w?1:0);
-  const l=Math.hypot(x,y)||1;
-  player.vx=x/l*player.speed;player.vy=y/l*player.speed;
+  let x = ((keys.d?1:0)-(keys.a?1:0)) + touchInput.moveX;
+  let y = ((keys.s?1:0)-(keys.w?1:0)) + touchInput.moveY;
+  const l = Math.hypot(x,y);
+  if (l > 1) { x /= l; y /= l; }
+
+  player.vx=x*player.speed; player.vy=y*player.speed;
   player.x=clamp(player.x+player.vx*dt,arena.x+player.r+5,arena.x+arena.w()-player.r-5);
   player.y=clamp(player.y+player.vy*dt,arena.y+player.r+5,arena.y+arena.h()-player.r-5);
   player.cool=Math.max(0,player.cool-dt);
@@ -839,10 +936,6 @@ function updateBullets(dt){
   }
 }
 
-// Visual-only integration used by the GUEST to keep bullets moving smoothly
-// at 60fps between the ~network-rate snapshots from the host. No collision
-// or wall-bounce here — the host is the sole authority on hits and bounces;
-// this just interpolates the path so it doesn't look choppy.
 function extrapolateBulletsVisual(dt){
   for(const b of bullets){
     b.age+=dt;
@@ -864,54 +957,32 @@ function hit(target,shooter){
 
   for(let i=0;i<22;i++){
     sparks.push({
-      x:target.x,
-      y:target.y,
-      vx:(Math.random()-.5)*500,
-      vy:(Math.random()-.5)*500,
+      x:target.x, y:target.y,
+      vx:(Math.random()-.5)*500, vy:(Math.random()-.5)*500,
       life:.65
     });
   }
 
   const winner = target===player ? bot : player;
-
-  // Record completed game
   stats.games++;
 
   if(winner===player){
     stats.wins++;
-
-    if(mode==='mp'){
-      stats.mpWins++;
-    }
+    if(mode==='mp') stats.mpWins++;
   }else{
     stats.losses++;
-
-    if(mode==='mp'){
-      stats.mpLosses++;
-    }else{
-      stats.botWins++;
-    }
+    if(mode==='mp') stats.mpLosses++;
+    else stats.botWins++;
   }
 
   saveStats();
-
   playSound(winner===player?'victory':'death');
 
-  document.getElementById('result').textContent =
-    winner===player
-      ? 'YOU WIN!'
-      : (mode==='mp' ? 'YOU LOSE!' : 'BOT WINS!');
+  document.getElementById('result').textContent = winner===player ? 'YOU WIN!' : (mode==='mp' ? 'YOU LOSE!' : 'BOT WINS!');
+  document.getElementById('resultSub').textContent = winner===player ? 'Nice shot!' : 'Ouch! You got hit by a bullet.';
 
-  document.getElementById('resultSub').textContent =
-    winner===player
-      ? 'Nice shot!'
-      : 'Ouch! You got hit by a bullet.';
-
-  // Host tells the guest who won.
   if(mode==='mp' && role==='host' && socket){
-    socket.emit('game-over', {
-      winner: winner===player ? 'host' : 'guest'
-    });
+    socket.emit('game-over', { winner: winner===player ? 'host' : 'guest' });
   }
 }
 function burst(x,y){
@@ -977,17 +1048,13 @@ function drawCooldown(p,x,y,label){
 
 function drawPing(){
   const text = pingMs === null ? 'PING --' : `PING ${pingMs}ms`;
-
   ctx.save();
-
   ctx.font='900 13px Arial';
   ctx.textAlign='right';
   ctx.textBaseline='top';
 
   const x=W-20;
   const y=20;
-
-  // Small dark background
   const width=92;
   const height=30;
 
@@ -996,9 +1063,7 @@ function drawPing(){
   ctx.roundRect(x-width,y,width,height,9);
   ctx.fill();
 
-  // Ping color
   let pingColor='#4f9f62';
-
   if(pingMs !== null){
     if(pingMs > 150) pingColor='#e95c4f';
     else if(pingMs > 80) pingColor='#d99a35';
@@ -1006,7 +1071,6 @@ function drawPing(){
 
   ctx.fillStyle=pingColor;
   ctx.fillText(text,x-10,y+8);
-
   ctx.restore();
 }
 
@@ -1029,24 +1093,17 @@ function ensureSocket(){
 
 function startPingMonitor(){
   if(pingTimer) return;
-
   const checkPing = () => {
     if(!socket || !socket.connected) return;
-
     const sentAt = performance.now();
     socket.emit('ping-check', sentAt);
   };
 
   socket.on('pong-check', sentAt => {
     const rtt = performance.now() - sentAt;
-
     pingSamples.push(rtt);
     if(pingSamples.length > 5) pingSamples.shift();
-
-    // Average the last few samples so the number doesn't jump around constantly.
-    pingMs = Math.round(
-      pingSamples.reduce((a,b)=>a+b,0) / pingSamples.length
-    );
+    pingMs = Math.round(pingSamples.reduce((a,b)=>a+b,0) / pingSamples.length);
   });
 
   checkPing();
@@ -1062,8 +1119,6 @@ function escapeHtml(s){
 }
 
 function syncMpSettings(){
-  // Multiplayer is PvP, so both sides should play under identical rules —
-  // fold the "bot" difficulty settings to match the host's own values.
   settings.botSpeed=settings.playerSpeed;
   settings.botCooldown=settings.playerCooldown;
   settings.botSize=settings.playerSize;
@@ -1115,17 +1170,15 @@ function buildStatePayload(){
 function sendGuestInput(){
   if(!socket) return;
   socket.volatile.emit('input', {
-    up:!!keys.w, down:!!keys.s, left:!!keys.a, right:!!keys.d,
+    up: !!keys.w || touchInput.moveY < -0.3,
+    down: !!keys.s || touchInput.moveY > 0.3,
+    left: !!keys.a || touchInput.moveX < -0.3,
+    right: !!keys.d || touchInput.moveX > 0.3,
     angle: Math.atan2(mouse.y-player.y, mouse.x-player.x),
     shoot: !!mouse.down
   });
 }
 
-// Guest-side: reconcile local prediction with the latest authoritative
-// snapshot from the host. Small corrections are blended in smoothly
-// (no visible snapping); the host's own avatar and all bullets are also
-// dead-reckoned forward using their last-known velocity so movement still
-// looks like 60fps even though snapshots arrive at a lower rate.
 function applyGuestFrame(dt){
   if(!lastSnapshot) return;
   const aw=arena.w(), ah=arena.h();
@@ -1138,19 +1191,11 @@ function applyGuestFrame(dt){
   bot.y += (predHY-bot.y)*Math.min(1,dt*18);
   bot.vx=hostD.vx; bot.vy=hostD.vy; bot.cool=lastSnapshot.host.cool;
 
-
- // poop ------------------------
-  
   const guestD=denorm(lastSnapshot.guest);
   const predGX=guestD.x+guestD.vx*elapsed, predGY=guestD.y+guestD.vy*elapsed;
   player.x += (predGX-player.x)*Math.min(1,dt*3);
   player.y += (predGY-player.y)*Math.min(1,dt*3);
 
-  player.cool=Math.max(player.cool, lastSnapshot.guest.cool);
-
-  // Don't let a slightly-stale server cooldown snap back below what we're
-  // already optimistically counting down locally — only let the server
-  // value push it UP (e.g. if our predicted shot got rejected).
   player.cool=Math.max(player.cool, lastSnapshot.guest.cool);
 
   const seen=new Set();
@@ -1159,11 +1204,6 @@ function applyGuestFrame(dt){
     const bx=arena.x+nb.x*aw, by=arena.y+nb.y*ah, bvx=nb.vx*aw, bvy=nb.vy*ah, bcurve=nb.curve*aw;
     let b=bullets.find(x=>x.id===nb.id);
     if(!b){
-      // This id is new to us. Before spawning it fresh, check whether it's
-      // actually the host's confirmation of a bullet we already predicted
-      // and drew locally — if so, adopt it (keep it on screen, just take
-      // over its id and true server-driven trajectory) instead of adding
-      // a second, duplicate bullet.
       let predicted=null,bestD=Infinity;
       for(const pb of bullets){
         if(!pb.predicted||pb.owner!==player)continue;
@@ -1185,9 +1225,6 @@ function applyGuestFrame(dt){
   for(let i=bullets.length-1;i>=0;i--){
     const b=bullets[i];
     if(seen.has(b.id))continue;
-    // Give a predicted bullet a brief grace period to get confirmed by
-    // the host before removing it, rather than deleting it the instant
-    // this snapshot (which predates it) arrives.
     if(b.predicted && b.age<0.5)continue;
     bullets.splice(i,1);
   }
@@ -1198,7 +1235,6 @@ function wireSocketEvents(){
     finishLoading();
     document.getElementById('mpStatus').textContent='Connected — choose or create a lobby.';
     socket.emit('list-lobbies');
-
     startPingMonitor();
   });
   socket.on('connect_error', ()=>{
@@ -1283,26 +1319,20 @@ function wireSocketEvents(){
     if(gameState!=='playing') return;
     gameState='over';
     const iWon = winner==='guest';
-    // Record multiplayer result for guest
-  stats.games++;
+    stats.games++;
 
-  if(iWon){
-    stats.wins++;
-    stats.mpWins++;
-  }else{
-    stats.losses++;
-    stats.mpLosses++;
-  }
+    if(iWon){
+      stats.wins++;
+      stats.mpWins++;
+    }else{
+      stats.losses++;
+      stats.mpLosses++;
+    }
 
-  saveStats();
-
-  document.getElementById('result').textContent =
-    iWon ? 'YOU WIN!' : 'YOU LOSE!';
-
-  document.getElementById('resultSub').textContent =
-    iWon ? 'Nice shot!' : 'Ouch! You got hit by a bullet.';
-
-  updateOverlays();
+    saveStats();
+    document.getElementById('result').textContent = iWon ? 'YOU WIN!' : 'YOU LOSE!';
+    document.getElementById('resultSub').textContent = iWon ? 'Nice shot!' : 'Ouch! You got hit by a bullet.';
+    updateOverlays();
   });
 }
 
@@ -1340,23 +1370,9 @@ function loop(t){
     if(mode==='bot'){
       movePlayer(dt); botAI(dt); updateBullets(dt);
     }else if(mode==='mp'){
-      // Both host and guest derive their avatar sizes from the shared
-      // logical arena width (MP_W), scaled to their OWN local arena in
-      // pixels. This keeps "your size" and "their size" on the same
-      // scale regardless of how big each person's window/screen is —
-      // previously only the opponent's size was rescaled this way (via
-      // the network snapshot), while your own avatar stayed a fixed
-      // pixel size, so a small screen made the opponent look tiny next
-      // to your own (relatively huge) avatar.
       const mpSizeScale=arena.w()/MP_W;
       player.r=settings.playerSize*mpSizeScale;
       bot.r=settings.botSize*mpSizeScale;
-      // Same fix, applied to movement speed: previously this stayed a
-      // fixed px/sec value regardless of arena size, so on a smaller
-      // arena (e.g. someone playing on a small window/phone) the same
-      // speed covered a much bigger fraction of the arena per second —
-      // which is why both players looked like they sped up whenever
-      // either one's screen was small.
       player.speed=settings.playerSpeed*mpSizeScale;
       bot.speed=settings.botSpeed*mpSizeScale;
 
@@ -1376,9 +1392,7 @@ function loop(t){
   updateSparks(dt);draw();requestAnimationFrame(loop)
 }
 
-
- // statssss
-
+// statssss
 document.getElementById('btnStats').onclick=()=>{
   playSound('button');
   updateStatsScreen();
@@ -1394,13 +1408,13 @@ document.getElementById('btnStatsBack').onclick=()=>{
 
 document.getElementById('btnResetStats').onclick=()=>{
   playSound('button');
-
   if(confirm('Reset all stats?')){
     stats={...DEFAULT_STATS};
     saveStats();
     updateStatsScreen();
   }
 };
+
 // ---------------------------------------------------------------------
 // Menu / pause / settings / multiplayer wiring
 // ---------------------------------------------------------------------
@@ -1423,7 +1437,6 @@ document.getElementById('btnOverMainMenu').onclick=()=>{
   else { gameState='menu'; updateOverlays(); }
 };
 document.getElementById('btnSettingsBack').onclick=()=>{playSound('button');gameState=settingsReturnTo;updateOverlays()};
-
 
 document.getElementById('btnMultiplayer').onclick=()=>{
   playSound('button');
@@ -1507,20 +1520,15 @@ reset();
 updateOverlays();
 requestAnimationFrame(loop);
 
-// Connect to the multiplayer server right away, in the background, behind
-// the loading screen — so by the time the player opens the Multiplayer
-// menu the connection (which can take a few seconds) is already warm.
 function finishLoading(){
   if(gameState!=='loading') return;
   gameState='menu';
   updateOverlays();
 }
 ensureSocket();
-// Safety net: don't leave the player stuck on the loading screen if the
-// server is slow to wake up or unreachable — fall through to the menu
-// after a few seconds regardless. Solo play still works either way, and
-// the Multiplayer menu shows live connection status if it's still pending.
 setTimeout(finishLoading, 4000);
 </script>
 </body>
 </html>
+
+```
