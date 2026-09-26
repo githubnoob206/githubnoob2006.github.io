@@ -1,3 +1,3 @@
 window.GAME_CONFIG = {
-  serverUrl: 'https://bounce-multiplayer-server.onrender.com'
+  serverUrl: 'https://onesecond-multiplayer-server.onrender.com'
 };
