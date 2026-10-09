@@ -1,0 +1,1041 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Head to Head — Time Bomb</title><meta name="description" content="A fast two-player time bomb game with four bot difficulties and local two-player mode."><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='black'/%3E%3Cpath d='M5 6h13v13H5zM23 24h12v12H23z' fill='white'/%3E%3C/svg%3E"><style>*{box-sizing:border-box}html,body{margin:0;background:#090909;color:#fafafa;height:100%;font-family:Arial,Helvetica,sans-serif}body{display:flex;flex-direction:column;overflow:hidden}header{padding:28px 34px;display:flex;justify-content:space-between;align-items:center}h1{font-size:18px;letter-spacing:.22em;font-weight:600;margin:0}#attempt{color:#888;font-size:13px;font-variant-numeric:tabular-nums}main{flex:1;position:relative;min-height:180px}canvas{display:block;width:100%;height:100%}#overlay{position:absolute;top:15%;left:0;width:100%;text-align:center;pointer-events:none}h2{font-size:clamp(24px,4vw,44px);letter-spacing:-.04em;font-weight:500;margin:0 0 12px}#message{color:#9b9b9b;font-size:14px;margin:0 12px 22px}button{font:inherit;cursor:pointer;border:1px solid #393939;color:#fff;background:#090909;border-radius:0;touch-action:manipulation}button:hover{border-color:#ddd}button:focus-visible{outline:2px solid white;outline-offset:5px}#play{pointer-events:auto;background:white;color:black;border:0;padding:13px 32px;font-size:14px}footer{padding:18px 34px 28px;display:flex;justify-content:space-between;align-items:center;gap:12px}.key{display:flex;align-items:center;gap:12px;padding:12px 16px;font-size:14px}.square{display:inline-block;width:13px;height:13px;background:white}.square.outline{background:none;border:2px solid white}.hint{color:#777;font-size:13px;text-align:center}#restart{border:0;color:#999;padding:8px;font-size:13px}#pause{position:absolute;right:32px;top:0;padding:8px 12px;font-size:13px;display:none}@media(max-width:550px){header{padding:22px}footer{padding:16px;gap:6px}.key{padding:12px;font-size:13px;gap:8px}.hint{display:none}#overlay{top:8%}}
+select{font:inherit;font-size:14px;color:white;background:#090909;border:1px solid #444;padding:10px;max-width:46%}header{gap:12px} @media(max-width:550px){h1{font-size:14px;letter-spacing:.1em}#attempt{font-size:11px}header{padding:16px 12px}}#score{display:flex;align-items:center;gap:18px;font-size:30px;font-variant-numeric:tabular-nums}.divider{color:#555}.controls{display:flex;align-items:center;gap:9px}.controls button{width:44px;height:44px;font-size:17px;user-select:none;-webkit-user-select:none}.controls button.down{background:#fff;color:#090909}.middle{display:flex;flex-direction:column;align-items:center}header h1{letter-spacing:.15em}@media(max-width:550px){.controls{gap:4px}.controls button{width:34px;height:42px}footer{padding:12px 8px}.controls .square{width:9px;height:9px}#score{gap:10px;font-size:24px}header h1{font-size:12px}.middle #restart{font-size:11px;padding:5px}}
+.settings{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:0 12px 10px}.settings select{max-width:none;min-width:145px;font-size:14px;padding:9px}#botLabel{font-size:13px;letter-spacing:.1em;color:#aaa;min-width:140px;text-align:right}header{padding-bottom:16px}[hidden]{display:none!important}@media(max-width:550px){#botLabel{min-width:90px;font-size:11px}.settings select{min-width:125px}#overlay{top:5%}}
+#lobbyPanel{display:none;position:fixed;z-index:10;inset:0;background:#090909f2;overflow:auto;padding:6vh 18px}#lobbyCard{max-width:620px;margin:auto;border:1px solid #333;padding:24px;background:#101010}#lobbyCard h2{font-size:24px;margin:0 0 8px}#lobbyStatus{color:#aaa;min-height:22px;font-size:13px;margin:10px 0}#lobbyTools{display:flex;gap:8px;margin:14px 0}#playerName{background:#090909;color:#fff;border:1px solid #444;padding:11px;min-width:0;flex:1;font:inherit}#createLobby,#refreshLobbies,#startOnlineGame,#leaveLobby{padding:10px 13px}#lobbyList{display:grid;gap:8px;margin-top:14px}.lobbyRow{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #333;padding:12px}.lobbyMeta{min-width:0}.lobbyTitle{font-size:14px}.lobbySub{font-size:12px;color:#888;margin-top:5px}.joinLobby{padding:8px 14px}.lobbyActions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}.tinyNote{font-size:12px;color:#777;line-height:1.5}@media(max-width:550px){#lobbyCard{padding:17px}.lobbyRow{align-items:flex-start}.lobbyRow .joinLobby{padding:8px}}
+</style></head><body><header><h1>HEAD TO HEAD</h1><div id="score" aria-live="polite"><span class="square"></span> <span id="score0">0</span><span class="divider">:</span><span id="score1">0</span> <span class="square outline"></span></div></header><nav class="settings"><select id="mode" aria-label="Game mode"><option value="bot">Bot mode</option><option value="local">Local two-player</option><option value="online">Public multiplayer</option></select><select id="difficulty" aria-label="Bot difficulty"><option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="hard">Hard</option><option value="nightmare">Nightmare</option></select></nav><section id="lobbyPanel" aria-modal="true" role="dialog" aria-label="Public multiplayer lobbies"><div id="lobbyCard"><h2 id="lobbyHeading">Public lobbies</h2><p class="tinyNote">Join an open match or create one. Lobbies are public and do not use passwords or invite codes.</p><div id="lobbyStatus" aria-live="polite">Connecting to public server…</div><div id="lobbyTools"><input id="playerName" maxlength="20" placeholder="Your name" aria-label="Your name"><button id="createLobby">Create lobby</button><button id="refreshLobbies" aria-label="Refresh lobbies">↻</button></div><div id="lobbyList"></div><div class="lobbyActions"><button id="leaveLobby" hidden>Leave lobby</button><button id="startOnlineGame" hidden>Start match</button><button id="closeLobbies">Back to game</button></div></div></section><main><canvas id="game" aria-label="Two-player arena. Solid cube: A and D to move, W to jump. Outlined cube: arrow keys to move and jump."></canvas><div id="overlay"><h2 id="title">Pass the bomb.</h2><p id="message">Touch your opponent to pass the bomb. Don’t hold it at 0.</p><button id="play">Play</button></div><button id="pause" aria-label="Resume game">Resume</button></main><footer><div class="controls"><span class="square"></span><button data-player="0" data-action="left" aria-label="Solid cube move left">A</button><button data-player="0" data-action="jump" aria-label="Solid cube jump">W</button><button data-player="0" data-action="right" aria-label="Solid cube move right">D</button></div><div class="middle"><span class="hint">Jump · 1s cooldown</span><button id="restart" aria-label="Reset scores and restart (R)">Restart · R</button></div><div class="controls" id="opponentControls"><button data-player="1" data-action="left" aria-label="Outline cube move left">←</button><button data-player="1" data-action="jump" aria-label="Outline cube jump">↑</button><button data-player="1" data-action="right" aria-label="Outline cube move right">→</button><span class="square outline"></span></div><span id="botLabel">NORMAL BOT</span></footer><script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.8.1/dist/socket.io.min.js"></script><script>
+// =============================================================================
+//  GAME CONFIGURATION & VARIABLES (EDITABLE)
+// =============================================================================
+const CONFIG = {
+  // Arena Physics & Movement
+  ARENA_WIDTH: 1000,        // Canvas base width in units
+  CUBE_SIZE: 48,           // Size of the player cubes
+  GRAVITY: 3200,           // Downward force
+  JUMP_VELOCITY: 1040,     // Initial jump thrust
+  MAX_SPEED: 360,          // Maximum running speed
+  ACCEL: 3300,             // Ground acceleration
+  TURN_ACCEL: 6200,        // Acceleration when changing direction
+  BRAKE: 5200,             // Friction / stopping speed
+  
+  // Game Timers & Cooldowns
+  BOMB_TIME: 10,           // Seconds on the bomb timer
+  PASS_LOCK_TIME: 1,      // Cooldown (in seconds) before bomb can be passed back
+  JUMP_COOLDOWN: 0.7,        // Cooldown between jumps
+  INPUT_BUFFER: 0.15,      // Early jump press tolerance (seconds)
+  PHYSICS_STEP: 1 / 240,   // Fixed timestep physics rate
+
+  // Visuals & Colors
+  COLOR_PRIMARY: '#fafafa',
+  COLOR_HOT_BOMB: '#ff4d4d',
+  COLOR_DIVIDER: '#555',
+  
+  // Bot AI Difficulty Profiles
+  BOT: {
+    easy:      { reaction: 0.24,  noise: 45, mistake: 0.22,  horizon: 0.43 },
+    normal:    { reaction: 0.12,  noise: 14, mistake: 0.055, horizon: 0.57 },
+    hard:      { reaction: 0.055, noise: 4,  mistake: 0.008, horizon: 1.05 },
+    nightmare: { reaction: 0.025, noise: 0,  mistake: 0,     horizon: 1.05 }
+  },
+
+  // Bomb Mode Specific Bot Profiles
+  BOT_BOMB: {
+    normal:    { hor: 0.55, Ts: [0.2],         js: [-1, 0],         models: [0],    react: 0.12,  noise: 14, mistake: 0.055, base: 800, snoise: 30 },
+    hard:      { hor: 0.85, Ts: [0.12, 0.3],   js: [-1, 0, 0.15],   models: [0, 1], react: 0.07,  noise: 4,  mistake: 0.008, base: 400, snoise: 12 },
+    nightmare: { hor: 1.1,  Ts: [0.1, 0.25, 0.45], js: [-1, 0, 0.12, 0.25], models: [0, 1, 2], react: 0.035, noise: 0, mistake: 0, base: 100, snoise: 2 }
+  }
+};
+
+// =============================================================================
+//  DOM ELEMENTS & KEYBINDINGS
+// =============================================================================
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const pauseButton = document.getElementById('pause');
+const modeSelect = document.getElementById('mode');
+const difficultySelect = document.getElementById('difficulty');
+const buttons = [...document.querySelectorAll('[data-action]')];
+
+const KEY_BINDINGS = {
+  KeyA: [0, 'left'],
+  KeyD: [0, 'right'],
+  KeyW: [0, 'jump'],
+  ArrowLeft: [1, 'left'],
+  ArrowRight: [1, 'right'],
+  ArrowUp: [1, 'jump']
+};
+
+// =============================================================================
+//  GAME STATE VARIABLES
+// =============================================================================
+let state = 'ready';
+let paused = false;
+let time = 0;
+let acc = 0;
+let last = 0;
+let scores = [0, 0];
+let cubes = [];
+let particles = [];
+let view = { w: 1000, h: 500 };
+
+let mode = 'bot';
+let onlineSocket = null, onlineRoomId = null, onlinePlayerIndex = -1, onlineIsHost = false, onlineStarted = false, lastNetSync = 0;
+const SERVER_URL = 'https://headtoheadserver.onrender.com';
+const lobbyPanel = document.getElementById('lobbyPanel');
+const lobbyStatus = document.getElementById('lobbyStatus');
+const lobbyList = document.getElementById('lobbyList');
+let difficulty = 'normal';
+let botNext = 0;
+let lastBotDir = 0;
+
+let bombHolder = -1;
+let bombTime = CONFIG.BOMB_TIME;
+let passLockUntil = 0;
+let bombRoundEnd = 0;
+
+const input = [
+  { left: new Set(), right: new Set(), jump: new Set() },
+  { left: new Set(), right: new Set(), jump: new Set() }
+];
+
+// =============================================================================
+//  CORE HELPER & MODE SETUP FUNCTIONS
+// =============================================================================
+function syncMode() {
+  document.getElementById('opponentControls').hidden = (mode === 'bot' || mode === 'online');
+  lobbyPanel.style.display = mode === 'online' && !onlineRoomId ? 'block' : 'none';
+  document.getElementById('botLabel').hidden = (mode !== 'bot' && mode !== 'online');
+  document.getElementById('botLabel').textContent = mode === 'online' ? (onlineRoomId ? (onlinePlayerIndex === 0 ? 'HOST' : 'GUEST') : 'PUBLIC MATCH') : difficulty.toUpperCase() + ' BOT';
+  difficultySelect.hidden = (mode !== 'bot');
+  document.getElementById('title').textContent = 'Pass the bomb.';
+  document.getElementById('message').textContent = (
+    mode === 'bot' 
+      ? 'A / D to move · W to jump. Touch the bot to pass the bomb.' 
+      : mode === 'online' ? 'Public multiplayer · waiting for an open lobby.' : 'Touch your opponent to pass the bomb.'
+  ) + ' Don’t hold it at 0.';
+}
+
+function changeMode() {
+  if (onlineRoomId) leaveOnlineLobby();
+  mode = modeSelect.value;
+  difficulty = difficultySelect.value;
+  reset();
+  state = 'ready';
+  paused = false;
+  overlay.style.display = 'block';
+  pauseButton.style.display = 'none';
+  syncMode();
+  if (mode === 'online') connectOnline();
+  modeSelect.blur();
+  difficultySelect.blur();
+}
+
+function connectOnline() {
+  if (onlineSocket?.connected) { onlineSocket.emit('listLobbies'); return; }
+  if (typeof io === 'undefined') { lobbyStatus.textContent = 'Could not load the multiplayer client. Check your connection and reload.'; return; }
+  if (!onlineSocket) {
+    onlineSocket = io(SERVER_URL, { transports:['websocket','polling'], reconnection:true, timeout:12000 });
+    onlineSocket.on('connect', () => { lobbyStatus.textContent = 'Connected. Choose a lobby or create one.'; onlineSocket.emit('listLobbies'); });
+    onlineSocket.on('connect_error', () => { lobbyStatus.textContent = 'Server is waking up or unreachable. Retrying…'; });
+    onlineSocket.on('lobbyList', renderLobbyList);
+    onlineSocket.on('lobbyCreated', data => enterOnlineLobby(data));
+    onlineSocket.on('lobbyJoined', data => enterOnlineLobby(data));
+    onlineSocket.on('lobbyError', data => { lobbyStatus.textContent = data?.message || 'Could not join that lobby.'; });
+    onlineSocket.on('lobbyChanged', data => { if (onlineRoomId === data.roomId) { lobbyStatus.textContent = data.count === 2 ? 'Opponent connected. Host can start the match.' : 'Lobby created. Waiting for another player…'; updateLobbyActions(data); } onlineSocket.emit('listLobbies'); });
+    onlineSocket.on('gameStarted', data => { if (onlineRoomId !== data.roomId) return; onlineStarted = true; lobbyPanel.style.display='none'; start(data.bombHolder); });
+    onlineSocket.on('playerInput', data => { if (onlineRoomId !== data.roomId || !onlineStarted) return; const i = onlinePlayerIndex === 0 ? 1 : 0; if (data.down) press(i,data.action,'remote'); else release(i,data.action,'remote'); });
+    onlineSocket.on('gameState', data => {
+      if (onlineRoomId !== data.roomId || onlinePlayerIndex !== 1 || !onlineStarted) return;
+      time=data.time; scores=data.scores; bombHolder=data.bombHolder; bombTime=data.bombTime;
+      passLockUntil=data.passLockUntil; bombRoundEnd=data.bombRoundEnd;
+      cubes=data.cubes; updateScore(); acc=0;
+    });
+    onlineSocket.on('opponentLeft', () => { onlineStarted=false; lobbyStatus.textContent='Your opponent left. The lobby is open again.'; lobbyPanel.style.display='block'; onlineSocket.emit('listLobbies'); });
+    onlineSocket.on('hostChanged', () => { onlinePlayerIndex=0; onlineIsHost=true; updateLobbyActions({count:1}); syncMode(); });
+    onlineSocket.on('lobbyClosed', () => { onlineStarted=false; onlineRoomId=null; onlinePlayerIndex=-1; lobbyStatus.textContent='The host closed this lobby.'; syncMode(); onlineSocket.emit('listLobbies'); });
+  }
+}
+function renderLobbyList(list) {
+  lobbyList.replaceChildren();
+  if (!list?.length) { const empty=document.createElement('div'); empty.className='tinyNote'; empty.textContent='No open lobbies right now. Create one and wait for a player.'; lobbyList.append(empty); return; }
+  for (const lobby of list) {
+    const row=document.createElement('div'); row.className='lobbyRow';
+    const meta=document.createElement('div'); meta.className='lobbyMeta';
+    const title=document.createElement('div'); title.className='lobbyTitle'; title.textContent=lobby.name + '’s lobby';
+    const sub=document.createElement('div'); sub.className='lobbySub'; sub.textContent='1 / 2 players · waiting'; meta.append(title,sub);
+    const join=document.createElement('button'); join.className='joinLobby'; join.textContent='Join'; join.addEventListener('click',()=>onlineSocket.emit('joinLobby',{roomId:lobby.roomId,name:getPlayerName()}));
+    row.append(meta,join); lobbyList.append(row);
+  }
+}
+function getPlayerName(){ const field=document.getElementById('playerName'); return (field.value.trim() || 'Player').slice(0,20); }
+function enterOnlineLobby(data) {
+  onlineRoomId=data.roomId; onlinePlayerIndex=data.playerIndex; onlineIsHost=!!data.host; onlineStarted=false;
+  lobbyStatus.textContent=onlineIsHost?'Lobby created. Waiting for another player…':'Joined lobby. Waiting for the host to start…';
+  lobbyList.replaceChildren(); updateLobbyActions({count:data.count}); syncMode(); lobbyPanel.style.display='block';
+}
+function updateLobbyActions(data={}) {
+  document.getElementById('createLobby').hidden=!!onlineRoomId;
+  document.getElementById('refreshLobbies').hidden=!!onlineRoomId;
+  document.getElementById('playerName').hidden=!!onlineRoomId;
+  document.getElementById('leaveLobby').hidden=!onlineRoomId;
+  document.getElementById('startOnlineGame').hidden=!(onlineRoomId && onlineIsHost && data.count===2 && !onlineStarted);
+  document.getElementById('closeLobbies').textContent=onlineRoomId?'Hide':'Back to game';
+}
+function leaveOnlineLobby(){ if(onlineSocket && onlineRoomId) onlineSocket.emit('leaveLobby',{roomId:onlineRoomId}); onlineRoomId=null; onlinePlayerIndex=-1; onlineIsHost=false; onlineStarted=false; updateLobbyActions(); }
+function startPublicGame(){ if(!onlineSocket || !onlineRoomId || !onlineIsHost) return; onlineSocket.emit('startGame',{roomId:onlineRoomId,bombHolder:Math.random()<.5?0:1}); }
+function sendGameSnapshot(now) {
+  if (mode !== 'online' || !onlineStarted || onlinePlayerIndex !== 0 || !onlineSocket || now-lastNetSync < 50) return;
+  lastNetSync=now;
+  onlineSocket.emit('gameState', {roomId:onlineRoomId,time,scores,bombHolder,bombTime,passLockUntil,bombRoundEnd,cubes});
+}
+
+function makeCube(i) {
+  return {
+    x: i ? 910 : 90,
+    h: 0,
+    vx: 0,
+    vy: 0,
+    angle: 0,
+    air: 0,
+    spin: i ? -1 : 1,
+    buffer: -1,
+    deadUntil: 0,
+    shieldUntil: 0,
+    nextJumpAt: 0
+  };
+}
+
+function updateScore() {
+  document.getElementById('score0').textContent = scores[0];
+  document.getElementById('score1').textContent = scores[1];
+}
+
+function startBomb(forcedHolder = null) {
+  bombHolder = forcedHolder === null ? (Math.random() < 0.5 ? 0 : 1) : forcedHolder;
+  bombTime = CONFIG.BOMB_TIME;
+  passLockUntil = time + CONFIG.PASS_LOCK_TIME;
+  bombRoundEnd = 0;
+}
+
+function reset(forcedHolder = null) {
+  botNext = 0;
+  bombRoundEnd = 0;
+  cubes = [makeCube(0), makeCube(1)];
+  scores = [0, 0];
+  particles = [];
+  time = 0;
+  acc = 0;
+  clearInput();
+  updateScore();
+  startBomb(forcedHolder);
+}
+
+function start(forcedHolder = null) {
+  reset(forcedHolder);
+  state = 'playing';
+  paused = false;
+  overlay.style.display = 'none';
+  pauseButton.style.display = 'none';
+  last = performance.now();
+}
+
+function explode() {
+  const h = bombHolder;
+  const c = cubes[h];
+  bombTime = 0;
+  bombHolder = -1;
+  scores[1 - h]++;
+  updateScore();
+
+  for (let n = 0; n < 60; n++) {
+    const a = Math.random() * Math.PI * 2;
+    const v = 120 + Math.random() * 420;
+    particles.push({
+      x: c.x,
+      y: c.h + CONFIG.CUBE_SIZE / 2,
+      vx: Math.cos(a) * v,
+      vy: Math.sin(a) * v,
+      life: 0.65
+    });
+  }
+
+  c.deadUntil = time + 9;
+  c.vx = c.vy = 0;
+  c.buffer = -1;
+  bombRoundEnd = time + 1.5;
+}
+
+// =============================================================================
+//  INPUT CONTROLS
+// =============================================================================
+function clearInput() {
+  for (const p of input) {
+    for (const set of Object.values(p)) set.clear();
+  }
+  for (const c of cubes) c.buffer = -1;
+  updateButtons();
+}
+
+function updateButtons() {
+  for (const b of buttons) {
+    b.classList.toggle('down', input[+b.dataset.player][b.dataset.action].size > 0);
+  }
+}
+
+function launch(c) {
+  c.vy = CONFIG.JUMP_VELOCITY;
+  c.air = 0;
+  c.angle = 0;
+  c.nextJumpAt = time + CONFIG.JUMP_COOLDOWN;
+}
+
+function tryJump(i) {
+  const c = cubes[i];
+  if (!c.deadUntil && c.h === 0 && c.vy === 0 && time + 1e-8 >= c.nextJumpAt && (input[i].jump.size || c.buffer >= time)) {
+    launch(c);
+    c.spin = Math.abs(c.vx) > 15 ? Math.sign(c.vx) : c.spin;
+    c.buffer = -1;
+  }
+}
+
+function press(i, action, token) {
+  if (i === 1 && mode === 'bot') return;
+  if (mode === 'online' && onlineSocket && onlineRoomId && onlineStarted && token !== 'remote') onlineSocket.emit('playerInput', {roomId:onlineRoomId, action, down:true});
+  if (state !== 'playing' || paused) return;
+  input[i][action].add(token);
+  if (action === 'jump') {
+    cubes[i].buffer = time + CONFIG.INPUT_BUFFER;
+    tryJump(i);
+  }
+  updateButtons();
+}
+
+function release(i, action, token) {
+  input[i][action].delete(token);
+  if (mode === 'online' && onlineSocket && onlineRoomId && onlineStarted && token !== 'remote') onlineSocket.emit('playerInput', {roomId:onlineRoomId, action, down:false});
+  updateButtons();
+}
+
+function approach(value, target, amount) {
+  return value < target ? Math.min(value + amount, target) : Math.max(value - amount, target);
+}
+
+// =============================================================================
+//  BOT ARTIFICIAL INTELLIGENCE
+// =============================================================================
+function forecastMove(c, dir, jump, dt, now) {
+  if (c.h === 0 && c.vy === 0 && jump && now + 1e-8 >= c.nextJumpAt) {
+    c.vy = CONFIG.JUMP_VELOCITY;
+    c.nextJumpAt = now + CONFIG.JUMP_COOLDOWN;
+  }
+  const reversing = dir !== 0 && c.vx !== 0 && Math.sign(c.vx) !== dir;
+  const moveAccel = dir ? (reversing ? CONFIG.TURN_ACCEL : CONFIG.ACCEL) : CONFIG.BRAKE;
+  
+  c.vx = approach(c.vx, dir * CONFIG.MAX_SPEED, moveAccel * dt);
+  c.x += c.vx * dt;
+
+  if (c.x < CONFIG.CUBE_SIZE / 2) {
+    c.x = CONFIG.CUBE_SIZE / 2;
+    c.vx = Math.max(0, c.vx);
+  }
+  if (c.x > CONFIG.ARENA_WIDTH - CONFIG.CUBE_SIZE / 2) {
+    c.x = CONFIG.ARENA_WIDTH - CONFIG.CUBE_SIZE / 2;
+    c.vx = Math.min(0, c.vx);
+  }
+  if (c.h > 0 || c.vy !== 0) {
+    c.h += c.vy * dt - CONFIG.GRAVITY * dt * dt / 2;
+    c.vy -= CONFIG.GRAVITY * dt;
+    if (c.h < 0) { c.h = 0; c.vy = 0; }
+  }
+}
+
+function evaluateAction(dir, delay, variant, noise, cfg) {
+  const b = { ...cubes[1] };
+  const p = { ...cubes[0] };
+  p.x += noise;
+  
+  let total = 0;
+  const dt = 1 / 60;
+  const steps = Math.ceil(cfg.horizon / dt);
+  const advanced = difficulty === 'hard' || difficulty === 'nightmare';
+  const pdir = Math.abs(p.vx) > 25 ? Math.sign(p.vx) : 0;
+
+  for (let n = 0; n < steps; n++) {
+    const elapsed = n * dt;
+    const now = time + elapsed;
+    const oldB = b.h;
+    const oldP = p.h;
+    const gapBefore = Math.abs(b.x - p.x);
+    let steer = dir;
+
+    if (advanced && elapsed > 0.18) {
+      const above = p.h > b.h + CONFIG.CUBE_SIZE && p.vy < b.vy;
+      const toward = Math.sign(p.x - b.x) || 1;
+      const lead = Math.max(CONFIG.CUBE_SIZE / 2, Math.min(CONFIG.ARENA_WIDTH - CONFIG.CUBE_SIZE / 2, p.x + p.vx * 0.12));
+      if (above && gapBefore < 140) {
+        steer = -toward;
+        if ((b.x < 70 && steer < 0) || (b.x > 930 && steer > 0)) steer = toward;
+      } else {
+        const err = lead - b.x - b.vx * 0.075;
+        steer = Math.abs(err) < 12 ? 0 : Math.sign(err);
+      }
+    }
+
+    forecastMove(b, steer, elapsed >= delay, dt, now);
+    forecastMove(p, variant === 1 ? 0 : variant === 2 ? -pdir : pdir, (variant === 2 && gapBefore < 220), dt, now);
+
+    const gap = Math.abs(b.x - p.x);
+    const height = b.h - p.h;
+    const overlap = gap < CONFIG.CUBE_SIZE;
+
+    if (overlap && oldB >= oldP + CONFIG.CUBE_SIZE - 0.5 && height <= CONFIG.CUBE_SIZE && b.vy < p.vy) {
+      if (now >= p.shieldUntil && now >= b.shieldUntil) return 5000 - n * 18;
+      b.h = p.h + CONFIG.CUBE_SIZE;
+      b.vy = CONFIG.JUMP_VELOCITY;
+      b.nextJumpAt = now + CONFIG.JUMP_COOLDOWN;
+    }
+    if (overlap && oldP >= oldB + CONFIG.CUBE_SIZE - 0.5 && height >= -CONFIG.CUBE_SIZE && p.vy < b.vy) {
+      if (now >= b.shieldUntil && now >= p.shieldUntil) return -7500 + n * 12;
+      p.h = b.h + CONFIG.CUBE_SIZE;
+      p.vy = CONFIG.JUMP_VELOCITY;
+      p.nextJumpAt = now + CONFIG.JUMP_COOLDOWN;
+    }
+    if (overlap && Math.abs(height) < CONFIG.CUBE_SIZE) {
+      const sign = p.x >= b.x ? 1 : -1;
+      const depth = CONFIG.CUBE_SIZE - gap;
+      b.x -= sign * depth / 2;
+      p.x += sign * depth / 2;
+      if (b.vx * sign > 0) b.vx = 0;
+      if (p.vx * sign < 0) p.vx = 0;
+    }
+
+    const danger = height < -CONFIG.CUBE_SIZE && p.vy < b.vy && gap < 130;
+    total += (height > CONFIG.CUBE_SIZE ? Math.max(0, 140 - gap) * 0.035 : 0) - (danger ? (130 - gap) * 0.16 : 0);
+
+    if (b.h === 0 && p.h === 0 && b.nextJumpAt <= now && p.nextJumpAt > now + 0.15 && gap < 190) total += 1.5;
+  }
+
+  const gap = Math.abs(b.x - p.x);
+  total -= gap * 0.65;
+  total += Math.min(150, b.h - p.h) * 0.12;
+  if (b.x < 45 || b.x > 955) total -= 18;
+  return total;
+}
+
+function thinkBot() {
+  if (time < botNext) return;
+  const cfg = CONFIG.BOT[difficulty];
+  botNext = time + cfg.reaction;
+  
+  const b = cubes[1];
+  const p = cubes[0];
+  for (const a of ['left', 'right', 'jump']) input[1][a].clear();
+  
+  if (b.deadUntil || p.deadUntil) { updateButtons(); return; }
+
+  const noise = (Math.random() - 0.5) * 2 * cfg.noise;
+  const advanced = difficulty === 'hard' || difficulty === 'nightmare';
+  let best = -Infinity;
+  let choice = { dir: 0, jump: false };
+
+  for (const dir of [-1, 0, 1]) {
+    for (const delay of [0, Infinity]) {
+      const main = evaluateAction(dir, delay, 0, noise, cfg);
+      let score = main;
+      if (advanced) {
+        const stop = evaluateAction(dir, delay, 1, noise, cfg);
+        const reverse = evaluateAction(dir, delay, 2, noise, cfg);
+        score = main * 0.6 + stop * 0.22 + reverse * 0.18;
+        if (difficulty === 'nightmare' && p.h > b.h + CONFIG.CUBE_SIZE && p.vy < b.vy) {
+          score = score * 0.9 + Math.min(main, stop, reverse) * 0.1;
+        }
+      }
+      if (delay === 0 && b.h === 0) score -= 8;
+      if (score > best) {
+        best = score;
+        choice = { dir, jump: delay === 0 };
+      }
+    }
+  }
+
+  if (Math.random() < cfg.mistake) {
+    choice = { dir: Math.random() < 0.6 ? Math.sign(p.x - b.x) : 0, jump: Math.random() < 0.25 };
+  }
+
+  if (choice.dir) input[1][choice.dir < 0 ? 'left' : 'right'].add('bot');
+  if (choice.jump) {
+    input[1].jump.add('bot');
+    b.buffer = time + CONFIG.INPUT_BUFFER;
+  }
+  updateButtons();
+}
+
+function thinkBombEasy() {
+  if (time < botNext) return;
+  const cfg = CONFIG.BOT[difficulty];
+  botNext = time + cfg.reaction;
+  
+  const b = cubes[1];
+  const p = cubes[0];
+  for (const a of ['left', 'right', 'jump']) input[1][a].clear();
+  
+  if (b.deadUntil || p.deadUntil || bombHolder < 0) { updateButtons(); return; }
+
+  const lead = { easy: 0, normal: 0.08, hard: 0.16, nightmare: 0.22 }[difficulty];
+  const dx = p.x + p.vx * lead + (Math.random() - 0.5) * 2 * cfg.noise - b.x;
+  const gap = Math.abs(p.x - b.x);
+  const ready = b.h === 0 && b.vy === 0 && time >= b.nextJumpAt;
+  let dir = 0;
+  let jump = false;
+
+  if (bombHolder === 1) {
+    dir = Math.abs(dx) < 6 ? 0 : Math.sign(dx);
+    if (ready && Math.abs(dx) < 90 && (p.h > CONFIG.CUBE_SIZE * 0.5 || (difficulty !== 'easy' && p.h > 0 && gap < 70))) {
+      jump = true;
+    }
+  } else {
+    const away = Math.sign(b.x - p.x) || 1;
+    const cornered = (b.x < 130 && away < 0) || (b.x > CONFIG.ARENA_WIDTH - 130 && away > 0);
+    if (cornered && gap < 260) {
+      dir = -away;
+      if (ready && gap > 90 && gap < (difficulty === 'easy' ? 110 : 190)) jump = true;
+    } else if (gap < 300) {
+      dir = away;
+    } else {
+      dir = Math.abs(b.x - CONFIG.ARENA_WIDTH / 2) > 80 ? Math.sign(CONFIG.ARENA_WIDTH / 2 - b.x) : 0;
+    }
+  }
+
+  if (Math.random() < cfg.mistake) {
+    dir = Math.random() < 0.5 ? -dir : 0;
+    jump = false;
+  }
+
+  if (dir) input[1][dir < 0 ? 'left' : 'right'].add('bot');
+  if (jump) {
+    input[1].jump.add('bot');
+    b.buffer = time + CONFIG.INPUT_BUFFER;
+  }
+  updateButtons();
+}
+
+let od = 0;
+let oj = false;
+
+function touchGain(r, base) {
+  return r <= 1 ? 6000 : r >= 2.5 ? base : 6000 - (r - 1) / 1.5 * (6000 - base);
+}
+
+function oppAct(m, fleerOpp, b, p, now) {
+  const gap = Math.abs(b.x - p.x);
+  if (m === 2) {
+    od = Math.abs(p.vx) > 20 ? Math.sign(p.vx) : 0;
+    oj = false;
+    return;
+  }
+  const ready = p.h === 0 && p.vy === 0 && p.nextJumpAt <= now;
+  if (!fleerOpp) {
+    const dx = b.x + (m === 0 ? b.vx * 0.15 : 0) - p.x;
+    od = Math.abs(dx) < 6 ? 0 : Math.sign(dx);
+    oj = m === 0 && ready && ((b.h > CONFIG.CUBE_SIZE * 0.6 && gap < 110) || (gap < 95 && b.h > 0));
+    return;
+  }
+  const away = Math.sign(p.x - b.x) || 1;
+  const cor = (p.x < 130 && away < 0) || (p.x > CONFIG.ARENA_WIDTH - 130 && away > 0);
+  oj = false;
+  
+  if (m === 1) { od = away; return; }
+  if (cor && gap < 260) {
+    od = -away;
+    oj = ready && gap > 80 && gap < 190;
+  } else if (gap < 300) {
+    od = away;
+  } else {
+    od = Math.abs(p.x - CONFIG.ARENA_WIDTH / 2) > 80 ? Math.sign(CONFIG.ARENA_WIDTH / 2 - p.x) : 0;
+  }
+}
+
+function simBomb(plan, m, holder, r0, lock0, B, P, cfg) {
+  const b = { x: B.x, h: B.h, vx: B.vx, vy: B.vy, nextJumpAt: B.nextJumpAt };
+  const p = { x: P.x, h: P.h, vx: P.vx, vy: P.vy, nextJumpAt: P.nextJumpAt };
+  const dt = 1 / 40;
+  const steps = Math.ceil(cfg.hor / dt);
+  let sc = 0;
+  let n = 0;
+
+  for (; n < steps; n++) {
+    const el = n * dt;
+    const now = time + el;
+    const t = el + dt;
+    oppAct(m, holder, b, p, now);
+    
+    forecastMove(b, el < plan.T ? plan.d0 : plan.d1, plan.j >= 0 && el >= plan.j, dt, now);
+    forecastMove(p, od, oj, dt, now);
+
+    const dx = p.x - b.x;
+    const adx = Math.abs(dx);
+    const ov = CONFIG.CUBE_SIZE - adx;
+
+    if (ov > 0 && CONFIG.CUBE_SIZE - Math.abs(b.h - p.h) > 0) {
+      if (t >= lock0) {
+        const g = touchGain(r0 - t, cfg.base);
+        return holder ? g - n : -g;
+      }
+      const sg = dx >= 0 ? 1 : -1;
+      b.x -= sg * ov / 2;
+      p.x += sg * ov / 2;
+      if (b.vx * sg > 0) b.vx = 0;
+      if (p.vx * sg < 0) p.vx = 0;
+    }
+    if (t >= r0) return holder ? -9000 - adx * 0.5 : 9000 + Math.min(adx, 300) * 0.1;
+    sc += holder ? -adx * 0.03 : Math.min(adx, 320) * 0.04;
+  }
+
+  const gap = Math.abs(b.x - p.x);
+  const now = time + n * dt;
+  let T;
+
+  if (holder) {
+    const ao = Math.sign(p.x - b.x) || 1;
+    const dO = ao > 0 ? CONFIG.ARENA_WIDTH - CONFIG.CUBE_SIZE / 2 - p.x : p.x - CONFIG.CUBE_SIZE / 2;
+    T = -gap * 0.65;
+    if (gap < 260 && dO < 170) T += (170 - dO) * 0.6;
+    if (b.h === 0 && b.nextJumpAt <= now && p.nextJumpAt > now) T += 40;
+  } else {
+    const aw = Math.sign(b.x - p.x) || 1;
+    const d = aw > 0 ? CONFIG.ARENA_WIDTH - CONFIG.CUBE_SIZE / 2 - b.x : b.x - CONFIG.CUBE_SIZE / 2;
+    T = Math.min(gap, 350) * 0.5 - Math.abs(b.x - CONFIG.ARENA_WIDTH / 2) * 0.03;
+    if (gap < 260 && d < 170) T -= (170 - d) * 1.4;
+    if (b.h === 0 && b.nextJumpAt <= now) T += 25;
+  }
+  return sc * 0.5 + T;
+}
+
+function thinkBomb() {
+  if (difficulty === 'easy') { thinkBombEasy(); return; }
+  if (time < botNext) return;
+
+  const cfg = CONFIG.BOT_BOMB[difficulty];
+  botNext = time + cfg.react;
+
+  const b = cubes[1];
+  const p = cubes[0];
+  for (const a of ['left', 'right', 'jump']) input[1][a].clear();
+
+  if (b.deadUntil || p.deadUntil || bombHolder < 0) { updateButtons(); return; }
+
+  const holder = bombHolder === 1;
+  const r0 = bombTime;
+  const lock0 = passLockUntil - time;
+  const noise = (Math.random() - 0.5) * 2 * cfg.noise;
+  const P = { x: p.x + noise, h: p.h, vx: p.vx, vy: p.vy, nextJumpAt: p.nextJumpAt };
+  const canJump = b.h === 0 && b.vy === 0 && b.nextJumpAt - time < 0.3;
+
+  let best = -Infinity;
+  let bd = 0;
+  let bj = false;
+
+  for (const d0 of [-1, 0, 1]) {
+    for (const d1 of [-1, 0, 1]) {
+      for (const T of (d0 === d1 ? [0] : cfg.Ts)) {
+        for (const j of (canJump ? cfg.js : [-1])) {
+          const plan = { d0, d1, T, j };
+          let sum = 0;
+          let w = 0;
+          let worst = Infinity;
+
+          for (const m of cfg.models) {
+            const v = simBomb(plan, m, holder, r0, lock0, b, P, cfg);
+            const wt = m === 0 ? 0.5 : m === 1 ? 0.3 : 0.2;
+            sum += v * wt;
+            w += wt;
+            if (v < worst) worst = v;
+          }
+
+          let v = sum / w;
+          if (difficulty === 'nightmare') v = v * 0.6 + worst * 0.4;
+          v += (d0 === lastBotDir ? 3 : 0) + (Math.random() - 0.5) * cfg.snoise;
+
+          if (v > best) {
+            best = v;
+            bd = d0;
+            bj = j === 0;
+          }
+        }
+      }
+    }
+  }
+
+  if (Math.random() < cfg.mistake) {
+    bd = [-1, 0, 1][Math.floor(Math.random() * 3)];
+    bj = false;
+  }
+
+  lastBotDir = bd;
+  if (bd) input[1][bd < 0 ? 'left' : 'right'].add('bot');
+  if (bj) {
+    input[1].jump.add('bot');
+    b.buffer = time + CONFIG.INPUT_BUFFER;
+  }
+  updateButtons();
+}
+
+// =============================================================================
+//  GAME STEP & PHYSICS UPDATES
+// =============================================================================
+function step(dt) {
+  time += dt;
+
+  if (bombRoundEnd && time >= bombRoundEnd) {
+    cubes = [makeCube(0), makeCube(1)];
+    startBomb();
+  }
+
+  if (mode === 'bot') thinkBomb();
+
+  const before = cubes.map(c => ({ x: c.x, h: c.h }));
+
+  for (let i = 0; i < 2; i++) {
+    let c = cubes[i];
+    if (c.deadUntil) {
+      if (time >= c.deadUntil) {
+        cubes[i] = makeCube(i);
+        c = cubes[i];
+        c.shieldUntil = time + 0.7;
+        before[i] = { x: c.x, h: 0 };
+      } else continue;
+    }
+
+    tryJump(i);
+    const direction = Number(input[i].right.size > 0) - Number(input[i].left.size > 0);
+    const speedBoost = (bombHolder === i) ? 1.1 : 1;
+    const reversing = direction !== 0 && c.vx !== 0 && Math.sign(c.vx) !== direction;
+    const moveAccel = direction ? (reversing ? CONFIG.TURN_ACCEL : CONFIG.ACCEL) * speedBoost : CONFIG.BRAKE;
+
+    c.vx = approach(c.vx, direction * CONFIG.MAX_SPEED * speedBoost, moveAccel * dt);
+    c.x += c.vx * dt;
+
+    if (c.x < CONFIG.CUBE_SIZE / 2) {
+      c.x = CONFIG.CUBE_SIZE / 2;
+      c.vx = Math.max(0, c.vx);
+    }
+    if (c.x > CONFIG.ARENA_WIDTH - CONFIG.CUBE_SIZE / 2) {
+      c.x = CONFIG.ARENA_WIDTH - CONFIG.CUBE_SIZE / 2;
+      c.vx = Math.min(0, c.vx);
+    }
+
+    if (c.h > 0 || c.vy !== 0) {
+      c.air += dt;
+      c.angle = c.spin * Math.min(c.air / (2 * CONFIG.JUMP_VELOCITY / CONFIG.GRAVITY), 1) * Math.PI;
+      c.h += c.vy * dt - CONFIG.GRAVITY * dt * dt / 2;
+      c.vy -= CONFIG.GRAVITY * dt;
+      if (c.h <= 0) {
+        c.h = 0;
+        c.vy = 0;
+        c.angle = 0;
+        c.air = 0;
+        tryJump(i);
+      }
+    }
+  }
+
+  if (bombHolder >= 0) {
+    bombTime -= dt;
+    if (bombTime <= 0) {
+      explode();
+      return;
+    }
+  }
+
+  const a = cubes[0];
+  const b = cubes[1];
+  if (a.deadUntil || b.deadUntil) return;
+
+  const dx = b.x - a.x;
+  const overX = CONFIG.CUBE_SIZE - Math.abs(dx);
+  if (overX <= 0) return;
+
+  let landedOnHead = false;
+  for (let i = 0; i < 2; i++) {
+    const c = cubes[i];
+    const other = cubes[1 - i];
+    if (before[i].h >= before[1 - i].h + CONFIG.CUBE_SIZE - 0.5 && c.h <= other.h + CONFIG.CUBE_SIZE && c.vy < other.vy) {
+      c.h = other.h + CONFIG.CUBE_SIZE;
+      c.vy = 0;
+      c.air = 0;
+      c.angle = 0;
+      landedOnHead = true;
+    }
+  }
+
+  if (landedOnHead) {
+    if (bombHolder >= 0 && time >= passLockUntil) {
+      bombHolder = 1 - bombHolder;
+      passLockUntil = time + CONFIG.PASS_LOCK_TIME;
+      const mx = (a.x + b.x) / 2;
+      const my = (a.h + b.h) / 2 + CONFIG.CUBE_SIZE / 2;
+      for (let n = 0; n < 14; n++) {
+        particles.push({
+          x: mx,
+          y: my,
+          vx: (Math.random() - 0.5) * 420,
+          vy: Math.random() * 320,
+          life: 0.45
+        });
+      }
+    }
+    return;
+  }
+
+  const overY = CONFIG.CUBE_SIZE - Math.abs(a.h - b.h);
+  if (overY <= 0) return;
+
+  if (bombHolder >= 0 && time >= passLockUntil) {
+    bombHolder = 1 - bombHolder;
+    passLockUntil = time + CONFIG.PASS_LOCK_TIME;
+    const mx = (a.x + b.x) / 2;
+    const my = (a.h + b.h) / 2 + CONFIG.CUBE_SIZE / 2;
+    for (let n = 0; n < 14; n++) {
+      particles.push({
+        x: mx,
+        y: my,
+        vx: (Math.random() - 0.5) * 420,
+        vy: Math.random() * 320,
+        life: 0.45
+      });
+    }
+  }
+
+  const sign = dx === 0 ? (before[1].x >= before[0].x ? 1 : -1) : Math.sign(dx);
+  a.x -= sign * overX / 2;
+  b.x += sign * overX / 2;
+
+  for (const c of cubes) {
+    if (c.x < CONFIG.CUBE_SIZE / 2) {
+      const correction = CONFIG.CUBE_SIZE / 2 - c.x;
+      c.x = CONFIG.CUBE_SIZE / 2;
+      const other = c === a ? b : a;
+      other.x += correction;
+    }
+    if (c.x > CONFIG.ARENA_WIDTH - CONFIG.CUBE_SIZE / 2) {
+      const correction = c.x - (CONFIG.ARENA_WIDTH - CONFIG.CUBE_SIZE / 2);
+      c.x = CONFIG.ARENA_WIDTH - CONFIG.CUBE_SIZE / 2;
+      const other = c === a ? b : a;
+      other.x -= correction;
+    }
+  }
+
+  if (a.vx * sign > 0) a.vx = 0;
+  if (b.vx * sign < 0) b.vx = 0;
+}
+
+// =============================================================================
+//  RENDERING & DRAWING
+// =============================================================================
+function drawBomb(c, i) {
+  if (bombHolder !== i) return;
+  const t = Math.max(0, bombTime);
+  const hot = t < 3 && Math.floor(time * (t < 1 ? 12 : 6)) % 2 === 0;
+  const col = hot ? CONFIG.COLOR_HOT_BOMB : CONFIG.COLOR_PRIMARY;
+  const x = Math.max(50, Math.min(CONFIG.ARENA_WIDTH - 50, c.x));
+  const y = -c.h - CONFIG.CUBE_SIZE;
+
+  ctx.save();
+  ctx.fillStyle = col;
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 2;
+  
+  ctx.beginPath();
+  ctx.arc(c.x, y - 12, 8, 0, 7);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(c.x + 4, y - 18);
+  ctx.quadraticCurveTo(c.x + 9, y - 24, c.x + 14, y - 21);
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.font = '600 26px "Courier New", monospace';
+  ctx.fillText(t.toFixed(2), x, y - 34);
+
+  const lock = Math.max(0, Math.min(1, (passLockUntil - time) / CONFIG.PASS_LOCK_TIME));
+  if (lock > 0) {
+    ctx.fillStyle = '#333';
+    ctx.fillRect(x - 30, y - 28, 60, 3);
+    ctx.fillStyle = '#888';
+    ctx.fillRect(x - 30, y - 28, 60 * lock, 3);
+  }
+  ctx.restore();
+}
+
+function draw(dt) {
+  const { w, h } = view;
+  const scale = Math.min(w / CONFIG.ARENA_WIDTH, h / 370);
+  const ox = (w - CONFIG.ARENA_WIDTH * scale) / 2;
+  const floor = h * 0.78;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.save();
+  ctx.translate(ox, floor);
+  ctx.scale(scale, scale);
+  ctx.lineWidth = 1 / scale;
+  ctx.strokeStyle = CONFIG.COLOR_DIVIDER;
+
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(CONFIG.ARENA_WIDTH, 0);
+  ctx.stroke();
+
+  for (let i = 0; i < 2; i++) {
+    const c = cubes[i];
+    if (c.deadUntil) continue;
+
+    ctx.save();
+    ctx.translate(c.x, -c.h - CONFIG.CUBE_SIZE / 2);
+    ctx.rotate(c.angle);
+    ctx.globalAlpha = time < c.shieldUntil ? 0.4 + 0.35 * Math.abs(Math.sin(time * 18)) : 1;
+    ctx.fillStyle = CONFIG.COLOR_PRIMARY;
+    ctx.strokeStyle = CONFIG.COLOR_PRIMARY;
+    ctx.lineWidth = 3;
+
+    if (i === 0) {
+      ctx.fillRect(-CONFIG.CUBE_SIZE / 2, -CONFIG.CUBE_SIZE / 2, CONFIG.CUBE_SIZE, CONFIG.CUBE_SIZE);
+    } else {
+      ctx.strokeRect(-CONFIG.CUBE_SIZE / 2 + 1.5, -CONFIG.CUBE_SIZE / 2 + 1.5, CONFIG.CUBE_SIZE - 3, CONFIG.CUBE_SIZE - 3);
+    }
+    ctx.restore();
+
+    const ready = Math.max(0, Math.min(1, 1 - (c.nextJumpAt - time) / CONFIG.JUMP_COOLDOWN));
+    if (ready < 1) {
+      ctx.fillStyle = '#333';
+      ctx.fillRect(c.x - CONFIG.CUBE_SIZE / 2, -c.h + 9, CONFIG.CUBE_SIZE, 3);
+      ctx.fillStyle = '#ddd';
+      ctx.fillRect(c.x - CONFIG.CUBE_SIZE / 2, -c.h + 9, CONFIG.CUBE_SIZE * ready, 3);
+    }
+    drawBomb(c, i);
+  }
+
+  for (const p of particles) {
+    p.life -= dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy -= 650 * dt;
+    if (p.life > 0) {
+      ctx.globalAlpha = p.life / 0.65;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(p.x, -p.y, 4, 4);
+    }
+  }
+  particles = particles.filter(p => p.life > 0);
+  ctx.restore();
+}
+
+function resize() {
+  const r = canvas.getBoundingClientRect();
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  view = { w: r.width, h: r.height };
+  canvas.width = Math.round(r.width * dpr);
+  canvas.height = Math.round(r.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+// =============================================================================
+//  GAME LOOP & EVENT LISTENERS
+// =============================================================================
+function frame(now) {
+  const dt = Math.min((now - (last || now)) / 1000, 0.05);
+  last = now;
+
+  if (state === 'playing' && !paused) {
+    acc += dt;
+    while (acc >= CONFIG.PHYSICS_STEP) {
+      step(CONFIG.PHYSICS_STEP);
+      acc -= CONFIG.PHYSICS_STEP;
+    }
+  }
+  draw(paused ? 0 : dt);
+  sendGameSnapshot(now);
+  requestAnimationFrame(frame);
+}
+
+function resume() {
+  paused = false;
+  acc = 0;
+  last = performance.now();
+  pauseButton.style.display = 'none';
+}
+
+function pause() {
+  if (mode === 'online') return;
+  clearInput();
+  if (state === 'playing') {
+    paused = true;
+    pauseButton.style.display = 'block';
+  }
+}
+
+// Event Listeners
+modeSelect.addEventListener('change', changeMode);
+document.getElementById('createLobby').addEventListener('click',()=>{ if(!onlineSocket?.connected){connectOnline();onlineSocket?.once('connect',()=>onlineSocket.emit('createLobby',{name:getPlayerName()}));return;} onlineSocket.emit('createLobby',{name:getPlayerName()}); });
+document.getElementById('refreshLobbies').addEventListener('click',()=>onlineSocket?.emit('listLobbies'));
+document.getElementById('startOnlineGame').addEventListener('click',startPublicGame);
+document.getElementById('leaveLobby').addEventListener('click',leaveOnlineLobby);
+document.getElementById('closeLobbies').addEventListener('click',()=>{ if(onlineRoomId) lobbyPanel.style.display='none'; else { modeSelect.value='bot'; changeMode(); } });
+difficultySelect.addEventListener('change', changeMode);
+document.getElementById('play').addEventListener('click', start);
+document.getElementById('restart').addEventListener('click', start);
+pauseButton.addEventListener('click', resume);
+
+new ResizeObserver(resize).observe(canvas);
+syncMode();
+reset();
+requestAnimationFrame(frame);
+
+window.addEventListener('keydown', e => {
+  if (KEY_BINDINGS[e.code] || ['KeyR', 'Enter', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code)) {
+    e.preventDefault();
+    if (e.repeat) return;
+    if (e.code === 'KeyR') { if(mode !== 'online') start(); return; }
+    if (e.code === 'Enter') {
+      if (mode === 'online') return;
+      if (state === 'ready') start();
+      else if (paused) resume();
+      return;
+    }
+    if (!KEY_BINDINGS[e.code]) return;
+    if (mode === 'online' && !onlineStarted) return;
+    if (mode === 'online') { const action=KEY_BINDINGS[e.code][1]; const mapped=[onlinePlayerIndex,action]; if (state === 'ready') return; press(mapped[0],mapped[1],e.code); return; }
+    if (state === 'ready') start();
+    if (paused) resume();
+    press(...KEY_BINDINGS[e.code], e.code);
+  }
+});
+
+window.addEventListener('keyup', e => {
+  if (KEY_BINDINGS[e.code]) {
+    e.preventDefault();
+    if (mode === 'online' && onlinePlayerIndex >= 0) release(onlinePlayerIndex, KEY_BINDINGS[e.code][1], e.code);
+    else release(...KEY_BINDINGS[e.code], e.code);
+  }
+});
+
+for (const b of buttons) {
+  const buttonPlayer = +b.dataset.player;
+  const action = b.dataset.action;
+  b.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    if (mode === 'online' && !onlineStarted) return;
+    const i = mode === 'online' ? onlinePlayerIndex : buttonPlayer;
+    if (state === 'ready' && mode !== 'online') start();
+    if (paused && mode !== 'online') resume();
+    b.setPointerCapture(e.pointerId);
+    press(i, action, 'p' + e.pointerId);
+  });
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    b.addEventListener(event, e => release(mode==='online'?onlinePlayerIndex:buttonPlayer, action, 'p' + e.pointerId));
+  }
+}
+
+window.addEventListener('blur', pause);
+document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+</script></body></html>
